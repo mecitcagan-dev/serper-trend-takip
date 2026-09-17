@@ -18,8 +18,11 @@ let keywordWorkingList = []; // modal içindeki geçici çalışma listesi
 // ---------- Activity Feed ----------
 
 async function loadRuns() {
+	const feedList = document.getElementById('feedList');
+	feedList.innerHTML =
+		'<div class="feed-empty" id="feedEmpty">Yükleniyor…</div>';
 	const feedEmpty = document.getElementById('feedEmpty');
-	feedEmpty.textContent = 'Yükleniyor…';
+
 	const { data, error } = await sb
 		.from('runs')
 		.select('*')
