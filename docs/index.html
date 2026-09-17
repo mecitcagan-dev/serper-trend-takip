@@ -1,126 +1,198 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Serper Trend Takip — Activity</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Serper Trend Takip — Activity</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<div class="app">
+			<!-- Sol ince ikon şeridi -->
+			<div class="rail">
+				<div class="rail-logo" title="Serper Trend Takip">STT</div>
+			</div>
 
-  <div class="app">
+			<!-- Orta panel: Activity feed -->
+			<div class="feed-panel">
+				<header class="feed-header">
+					<h1>Activity</h1>
+					<div class="header-actions">
+						<button
+							class="icon-btn"
+							id="refreshBtn"
+							title="Yenile"
+							aria-label="Yenile"
+						>
+							<svg viewBox="0 0 20 20" fill="none">
+								<path
+									d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6M16.5 3.5V8h-4.5"
+									stroke="currentColor"
+									stroke-width="1.6"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+						</button>
+						<button
+							class="icon-btn"
+							id="settingsBtn"
+							title="Tarama sıklığı"
+							aria-label="Tarama sıklığı"
+						>
+							<svg viewBox="0 0 20 20" fill="none">
+								<path
+									d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
+									stroke="currentColor"
+									stroke-width="1.6"
+								/>
+								<path
+									d="M16.2 12.3c.1-.4.1-.8 0-1.2l1.1-1.2-1-1.7-1.6.4c-.3-.3-.7-.5-1-.7L13.3 6h-2l-.4 1.9c-.4.2-.7.4-1 .7l-1.6-.4-1 1.7 1.1 1.2c-.1.4-.1.8 0 1.2l-1.1 1.2 1 1.7 1.6-.4c.3.3.7.5 1 .7l.4 1.9h2l.4-1.9c.4-.2.7-.4 1-.7l1.6.4 1-1.7-1.1-1.2Z"
+									stroke="currentColor"
+									stroke-width="1.4"
+									stroke-linejoin="round"
+								/>
+							</svg>
+						</button>
+						<button
+							class="icon-btn"
+							id="editKeywordsBtn"
+							title="Kelimeleri düzenle"
+							aria-label="Kelimeleri düzenle"
+						>
+							<svg viewBox="0 0 20 20" fill="none">
+								<path
+									d="M4 15.5V17h1.5L14 8.5l-1.5-1.5L4 15.5Z"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linejoin="round"
+								/>
+								<path
+									d="M12.5 5.5 14 4l2 2-1.5 1.5-2-2Z"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linejoin="round"
+								/>
+							</svg>
+						</button>
+					</div>
+				</header>
 
-    <!-- Sol ince ikon şeridi -->
-    <div class="rail">
-      <div class="rail-logo" title="Serper Trend Takip">STT</div>
-    </div>
+				<div class="tabs" id="tabs">
+					<button class="tab active" data-filter="all">Tümü</button>
+					<button class="tab" data-filter="siralama_degisti">Sıralama</button>
+					<button class="tab" data-filter="yeni_rakip">Yeni Rakip</button>
+					<button class="tab" data-filter="yeni_trend">Yeni Trend</button>
+				</div>
 
-    <!-- Orta panel: Activity feed -->
-    <div class="feed-panel">
-      <header class="feed-header">
-        <h1>Activity</h1>
-        <div class="header-actions">
-          <button class="icon-btn" id="refreshBtn" title="Yenile" aria-label="Yenile">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6M16.5 3.5V8h-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button class="icon-btn" id="settingsBtn" title="Tarama sıklığı" aria-label="Tarama sıklığı">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" stroke="currentColor" stroke-width="1.6"/><path d="M16.2 12.3c.1-.4.1-.8 0-1.2l1.1-1.2-1-1.7-1.6.4c-.3-.3-.7-.5-1-.7L13.3 6h-2l-.4 1.9c-.4.2-.7.4-1 .7l-1.6-.4-1 1.7 1.1 1.2c-.1.4-.1.8 0 1.2l-1.1 1.2 1 1.7 1.6-.4c.3.3.7.5 1 .7l.4 1.9h2l.4-1.9c.4-.2.7-.4 1-.7l1.6.4 1-1.7-1.1-1.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-          </button>
-          <button class="icon-btn" id="editKeywordsBtn" title="Kelimeleri düzenle" aria-label="Kelimeleri düzenle">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M4 15.5V17h1.5L14 8.5l-1.5-1.5L4 15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M12.5 5.5 14 4l2 2-1.5 1.5-2-2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-      </header>
+				<div class="feed-list" id="feedList">
+					<div class="feed-empty" id="feedEmpty">Yükleniyor…</div>
+				</div>
+			</div>
 
-      <div class="tabs" id="tabs">
-        <button class="tab active" data-filter="all">Tümü</button>
-        <button class="tab" data-filter="siralama_degisti">Sıralama</button>
-        <button class="tab" data-filter="yeni_rakip">Yeni Rakip</button>
-        <button class="tab" data-filter="yeni_trend">Yeni Trend</button>
-      </div>
+			<!-- Sağ panel: Detay -->
+			<div class="detail-panel" id="detailPanel">
+				<div class="detail-empty">Bir kart seç, detaylı raporu burada gör.</div>
+			</div>
+		</div>
 
-      <div class="feed-list" id="feedList">
-        <div class="feed-empty" id="feedEmpty">Yükleniyor…</div>
-      </div>
-    </div>
+		<!-- Ayarlar Modal -->
+		<div class="modal-overlay" id="settingsModalOverlay">
+			<div class="modal">
+				<div class="modal-header">
+					<h2>Tarama Sıklığı</h2>
+					<button
+						class="icon-btn"
+						id="closeSettingsModalBtn"
+						aria-label="Kapat"
+					>
+						<svg viewBox="0 0 20 20" fill="none">
+							<path
+								d="M5 5l10 10M15 5 5 15"
+								stroke="currentColor"
+								stroke-width="1.6"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+				</div>
+				<div class="modal-body">
+					<p class="modal-hint">
+						Otomasyon her 10 dakikada bir kontrol ediyor, ama gerçek taramayı
+						sadece burada seçtiğin süre geçtiyse yapıyor. serper.dev kotanı
+						korumak için test dışında 6 saatin altına inmemeni öneririz.
+					</p>
+					<select id="intervalSelect">
+						<option value="0">Her tetiklemede (test — bekleme yok)</option>
+						<option value="1">1 dakika (test)</option>
+						<option value="5">5 dakika (test)</option>
+						<option value="10">10 dakika (test)</option>
+						<option value="30">30 dakika</option>
+						<option value="60">1 saat</option>
+						<option value="180">3 saat</option>
+						<option value="360">6 saat (önerilen)</option>
+						<option value="720">12 saat</option>
+						<option value="1440">24 saat</option>
+					</select>
+				</div>
+				<div class="modal-footer">
+					<span class="save-status" id="settingsSaveStatus"></span>
+					<button class="save-btn" id="saveSettingsBtn">Kaydet</button>
+				</div>
+			</div>
+		</div>
 
-    <!-- Sağ panel: Detay -->
-    <div class="detail-panel" id="detailPanel">
-      <div class="detail-empty">
-        Bir kart seç, detaylı raporu burada gör.
-      </div>
-    </div>
+		<!-- Kelime Modal -->
+		<div class="modal-overlay" id="modalOverlay">
+			<div class="modal modal-wide">
+				<div class="modal-header">
+					<h2>Takip Edilen Kelimeler</h2>
+					<button class="icon-btn" id="closeModalBtn" aria-label="Kapat">
+						<svg viewBox="0 0 20 20" fill="none">
+							<path
+								d="M5 5l10 10M15 5 5 15"
+								stroke="currentColor"
+								stroke-width="1.6"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+				</div>
+				<div class="modal-body">
+					<ul class="keyword-list" id="keywordList"></ul>
 
-  </div>
-
-  <!-- Ayarlar Modal -->
-  <div class="modal-overlay" id="settingsModalOverlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Tarama Sıklığı</h2>
-        <button class="icon-btn" id="closeSettingsModalBtn" aria-label="Kapat">
-          <svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="modal-hint">
-          Otomasyon her 10 dakikada bir kontrol ediyor, ama gerçek taramayı
-          sadece burada seçtiğin süre geçtiyse yapıyor. serper.dev kotanı
-          korumak için test dışında 6 saatin altına inmemeni öneririz.
-        </p>
-        <select id="intervalSelect">
-          <option value="5">5 dakika (test)</option>
-          <option value="10">10 dakika (test)</option>
-          <option value="30">30 dakika</option>
-          <option value="60">1 saat</option>
-          <option value="180">3 saat</option>
-          <option value="360">6 saat (önerilen)</option>
-          <option value="720">12 saat</option>
-          <option value="1440">24 saat</option>
-        </select>
-      </div>
-      <div class="modal-footer">
-        <span class="save-status" id="settingsSaveStatus"></span>
-        <button class="save-btn" id="saveSettingsBtn">Kaydet</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Kelime Modal -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal modal-wide">
-      <div class="modal-header">
-        <h2>Takip Edilen Kelimeler</h2>
-        <button class="icon-btn" id="closeModalBtn" aria-label="Kapat">
-          <svg viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <ul class="keyword-list" id="keywordList"></ul>
-
-        <div class="bulk-add">
-          <label for="bulkKeywordInput">Toplu kelime ekle</label>
-          <textarea id="bulkKeywordInput" rows="3" placeholder="Her satıra bir kelime yaz, ya da virgülle ayır — örn.
+					<div class="bulk-add">
+						<label for="bulkKeywordInput">Toplu kelime ekle</label>
+						<textarea
+							id="bulkKeywordInput"
+							rows="3"
+							placeholder="Her satıra bir kelime yaz, ya da virgülle ayır — örn.
 web sitesi tasarımı
-seo ajansı istanbul, e-ticaret sitesi kurma"></textarea>
-          <div class="bulk-add-row">
-            <span class="bulk-add-status" id="bulkAddStatus"></span>
-            <button class="secondary-btn" id="addKeywordBtn">Listeye ekle</button>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <span class="save-status" id="saveStatus"></span>
-        <button class="save-btn" id="saveKeywordsBtn">Kaydet</button>
-      </div>
-    </div>
-  </div>
+seo ajansı istanbul, e-ticaret sitesi kurma"
+						></textarea>
+						<div class="bulk-add-row">
+							<span class="bulk-add-status" id="bulkAddStatus"></span>
+							<button class="secondary-btn" id="addKeywordBtn">
+								Listeye ekle
+							</button>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<span class="save-status" id="saveStatus"></span>
+					<button class="save-btn" id="saveKeywordsBtn">Kaydet</button>
+				</div>
+			</div>
+		</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
-</body>
+		<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+		<script src="config.js"></script>
+		<script src="app.js"></script>
+	</body>
 </html>
