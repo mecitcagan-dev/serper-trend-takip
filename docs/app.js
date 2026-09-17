@@ -96,7 +96,7 @@ function renderFeed() {
 		card.className =
 			'feed-card' + (run.id === selectedRunId ? ' selected' : '');
 		card.innerHTML = `
-      <div class="feed-card-icon">${meta.icon}</div>
+      <div class="feed-card-icon ev-${run.event_type}">${meta.icon}</div>
       <div class="feed-card-body">
         <div class="feed-card-top">
           <span class="feed-card-title">${meta.label}</span>
@@ -196,6 +196,8 @@ function escapeHtml(str) {
 async function openKeywordModal() {
 	document.getElementById('modalOverlay').classList.add('open');
 	document.getElementById('saveStatus').textContent = '';
+	document.getElementById('bulkAddStatus').textContent = '';
+	document.getElementById('bulkKeywordInput').value = '';
 	const { data, error } = await sb
 		.from('keywords')
 		.select('*')
@@ -242,13 +244,50 @@ function renderKeywordList() {
 	});
 }
 
-function addKeywordFromInput() {
-	const input = document.getElementById('newKeywordInput');
-	const value = input.value.trim();
-	if (!value) return;
-	keywordWorkingList.push({ id: null, keyword: value, active: true });
-	input.value = '';
+// Textarea'ya yapıştırılan/yazılan çoklu kelimeleri (satır satır ya da
+// virgülle ayrılmış) tek seferde çalışma listesine ekler.
+function addKeywordsFromTextarea() {
+	const textarea = document.getElementById('bulkKeywordInput');
+	const status = document.getElementById('bulkAddStatus');
+	const raw = textarea.value;
+
+	if (!raw.trim()) {
+		status.textContent = 'Önce en az bir kelime yaz.';
+		return;
+	}
+
+	const candidates = raw
+		.split(/[\n,]+/)
+		.map((s) => s.trim())
+		.filter(Boolean);
+
+	const existingLower = new Set(
+		keywordWorkingList.map((k) => k.keyword.toLowerCase()),
+	);
+	let added = 0;
+	let skipped = 0;
+
+	candidates.forEach((kw) => {
+		const lower = kw.toLowerCase();
+		if (existingLower.has(lower)) {
+			skipped++;
+			return;
+		}
+		keywordWorkingList.push({ id: null, keyword: kw, active: true });
+		existingLower.add(lower);
+		added++;
+	});
+
+	textarea.value = '';
 	renderKeywordList();
+
+	if (added && skipped) {
+		status.textContent = `${added} kelime eklendi, ${skipped} tanesi zaten listedeydi.`;
+	} else if (added) {
+		status.textContent = `${added} kelime eklendi.`;
+	} else {
+		status.textContent = 'Hepsi zaten listede.';
+	}
 }
 
 async function saveKeywords() {
@@ -293,40 +332,6 @@ async function saveKeywords() {
 	}
 }
 
-// ---------- Olay bağlamaları ----------
-
-document.getElementById('refreshBtn').addEventListener('click', loadRuns);
-
-document.querySelectorAll('.tab').forEach((tab) => {
-	tab.addEventListener('click', () => {
-		document
-			.querySelectorAll('.tab')
-			.forEach((t) => t.classList.remove('active'));
-		tab.classList.add('active');
-		currentFilter = tab.dataset.filter;
-		renderFeed();
-	});
-});
-
-document
-	.getElementById('editKeywordsBtn')
-	.addEventListener('click', openKeywordModal);
-document.getElementById('closeModalBtn').addEventListener('click', () => {
-	document.getElementById('modalOverlay').classList.remove('open');
-});
-document
-	.getElementById('addKeywordBtn')
-	.addEventListener('click', addKeywordFromInput);
-document.getElementById('newKeywordInput').addEventListener('keydown', (e) => {
-	if (e.key === 'Enter') addKeywordFromInput();
-});
-document
-	.getElementById('saveKeywordsBtn')
-	.addEventListener('click', saveKeywords);
-document.getElementById('modalOverlay').addEventListener('click', (e) => {
-	if (e.target.id === 'modalOverlay') e.target.classList.remove('open');
-});
-
 // ---------- Tarama Sıklığı Ayarı ----------
 
 const SETTINGS_KEY = 'scan_interval_minutes';
@@ -365,6 +370,40 @@ async function saveSettings() {
 		);
 	}
 }
+
+// ---------- Olay bağlamaları ----------
+
+document.getElementById('refreshBtn').addEventListener('click', loadRuns);
+
+document.querySelectorAll('.tab').forEach((tab) => {
+	tab.addEventListener('click', () => {
+		document
+			.querySelectorAll('.tab')
+			.forEach((t) => t.classList.remove('active'));
+		tab.classList.add('active');
+		currentFilter = tab.dataset.filter;
+		renderFeed();
+	});
+});
+
+document
+	.getElementById('editKeywordsBtn')
+	.addEventListener('click', openKeywordModal);
+document.getElementById('closeModalBtn').addEventListener('click', () => {
+	document.getElementById('modalOverlay').classList.remove('open');
+});
+document
+	.getElementById('addKeywordBtn')
+	.addEventListener('click', addKeywordsFromTextarea);
+document.getElementById('bulkKeywordInput').addEventListener('keydown', (e) => {
+	if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') addKeywordsFromTextarea();
+});
+document
+	.getElementById('saveKeywordsBtn')
+	.addEventListener('click', saveKeywords);
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+	if (e.target.id === 'modalOverlay') e.target.classList.remove('open');
+});
 
 document
 	.getElementById('settingsBtn')

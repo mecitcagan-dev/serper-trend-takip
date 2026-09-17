@@ -19,9 +19,16 @@ def get_client():
 
 
 def get_setting(supabase, key: str, default: str) -> str:
-    res = supabase.table("settings").select("value").eq("key", key).limit(1).execute()
-    if res.data:
-        return res.data[0]["value"]
+    try:
+        res = supabase.table("settings").select("value").eq("key", key).limit(1).execute()
+        if res.data:
+            return res.data[0]["value"]
+    except Exception as e:
+        print(
+            f"UYARI: '{key}' ayarı okunamadı ({e}). Varsayılan değer ({default}) kullanılıyor. "
+            f"'settings' tablosunun Supabase'de olduğundan ve RLS policy'lerinin doğru olduğundan emin ol.",
+            file=sys.stderr,
+        )
     return default
 
 
