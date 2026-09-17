@@ -1,74 +1,111 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Serper Trend Takip — Activity</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Serper Trend Takip — Activity</title>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<div class="app">
+			<!-- Sol ince ikon şeridi -->
+			<div class="rail">
+				<div class="rail-logo" title="Serper Trend Takip">STT</div>
+			</div>
 
-  <div class="app">
+			<!-- Orta panel: Activity feed -->
+			<div class="feed-panel">
+				<header class="feed-header">
+					<h1>Activity</h1>
+					<button class="icon-btn" id="refreshBtn" title="Yenile">⟳</button>
+				</header>
 
-    <!-- Sol ince ikon şeridi -->
-    <div class="rail">
-      <div class="rail-logo" title="Serper Trend Takip">STT</div>
-    </div>
+				<div class="tabs" id="tabs">
+					<button class="tab active" data-filter="all">Tümü</button>
+					<button class="tab" data-filter="siralama_degisti">
+						Sıralama Değişimi
+					</button>
+					<button class="tab" data-filter="yeni_rakip">Yeni Rakip</button>
+					<button class="tab" data-filter="yeni_trend">Yeni Trend</button>
+				</div>
 
-    <!-- Orta panel: Activity feed -->
-    <div class="feed-panel">
-      <header class="feed-header">
-        <h1>Activity</h1>
-        <button class="icon-btn" id="refreshBtn" title="Yenile">⟳</button>
-      </header>
+				<div class="feed-list" id="feedList">
+					<div class="feed-empty" id="feedEmpty">Yükleniyor…</div>
+				</div>
+			</div>
 
-      <div class="tabs" id="tabs">
-        <button class="tab active" data-filter="all">Tümü</button>
-        <button class="tab" data-filter="siralama_degisti">Sıralama Değişimi</button>
-        <button class="tab" data-filter="yeni_rakip">Yeni Rakip</button>
-        <button class="tab" data-filter="yeni_trend">Yeni Trend</button>
-      </div>
+			<!-- Sağ panel: Detay -->
+			<div class="detail-panel" id="detailPanel">
+				<div class="detail-empty">Bir kart seç, detaylı raporu burada gör.</div>
+			</div>
+		</div>
 
-      <div class="feed-list" id="feedList">
-        <div class="feed-empty" id="feedEmpty">Yükleniyor…</div>
-      </div>
-    </div>
+		<!-- Sağ alt köşe: Kelimeleri Düzenle -->
+		<!-- Sağ alt köşe: Kelimeleri Düzenle + Ayarlar -->
+		<div class="fab-row">
+			<button class="fab fab-secondary" id="settingsBtn">
+				⚙️ Tarama Sıklığı
+			</button>
+			<button class="fab" id="editKeywordsBtn">Kelimeleri Düzenle</button>
+		</div>
 
-    <!-- Sağ panel: Detay -->
-    <div class="detail-panel" id="detailPanel">
-      <div class="detail-empty">
-        Bir kart seç, detaylı raporu burada gör.
-      </div>
-    </div>
+		<!-- Ayarlar Modal -->
+		<div class="modal-overlay" id="settingsModalOverlay">
+			<div class="modal">
+				<div class="modal-header">
+					<h2>Tarama Sıklığı</h2>
+					<button class="icon-btn" id="closeSettingsModalBtn">✕</button>
+				</div>
+				<div class="modal-body">
+					<p class="detail-muted" style="margin-top: 0">
+						Otomasyon her 10 dakikada bir kontrol ediyor ama gerçek taramayı
+						sadece burada seçtiğin süre geçtiyse yapıyor. serper.dev kotanı
+						korumak için test dışında 6 saatin altına inmeni önermeyiz.
+					</p>
+					<select id="intervalSelect">
+						<option value="10">10 dakika (test)</option>
+						<option value="30">30 dakika</option>
+						<option value="60">1 saat</option>
+						<option value="180">3 saat</option>
+						<option value="360">6 saat (önerilen)</option>
+						<option value="720">12 saat</option>
+						<option value="1440">24 saat</option>
+					</select>
+				</div>
+				<div class="modal-footer">
+					<span class="save-status" id="settingsSaveStatus"></span>
+					<button class="save-btn" id="saveSettingsBtn">Kaydet</button>
+				</div>
+			</div>
+		</div>
 
-  </div>
+		<!-- Modal -->
+		<div class="modal-overlay" id="modalOverlay">
+			<div class="modal">
+				<div class="modal-header">
+					<h2>Takip Edilen Kelimeler</h2>
+					<button class="icon-btn" id="closeModalBtn">✕</button>
+				</div>
+				<div class="modal-body">
+					<ul class="keyword-list" id="keywordList"></ul>
+					<div class="add-keyword-row">
+						<input
+							type="text"
+							id="newKeywordInput"
+							placeholder="Yeni kelime ekle…"
+						/>
+						<button id="addKeywordBtn">Ekle</button>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<span class="save-status" id="saveStatus"></span>
+					<button class="save-btn" id="saveKeywordsBtn">Kaydet</button>
+				</div>
+			</div>
+		</div>
 
-  <!-- Sağ alt köşe: Kelimeleri Düzenle -->
-  <button class="fab" id="editKeywordsBtn">Kelimeleri Düzenle</button>
-
-  <!-- Modal -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Takip Edilen Kelimeler</h2>
-        <button class="icon-btn" id="closeModalBtn">✕</button>
-      </div>
-      <div class="modal-body">
-        <ul class="keyword-list" id="keywordList"></ul>
-        <div class="add-keyword-row">
-          <input type="text" id="newKeywordInput" placeholder="Yeni kelime ekle…">
-          <button id="addKeywordBtn">Ekle</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <span class="save-status" id="saveStatus"></span>
-        <button class="save-btn" id="saveKeywordsBtn">Kaydet</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
-</body>
+		<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+		<script src="config.js"></script>
+		<script src="app.js"></script>
+	</body>
 </html>

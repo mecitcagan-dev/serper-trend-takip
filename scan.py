@@ -1,15 +1,4 @@
-"""Ana otomasyon scripti.
-
-Akış:
-1. Supabase'den aktif kelimeleri oku.
-2. Her kelime için serper.dev'den güncel Google TR sonuçlarını çek.
-3. Bir önceki snapshot ile karşılaştır.
-4. Yeni snapshot'ı kaydet + bir "run" (activity kartı) oluştur.
-
-GitHub Actions bu scripti .github/workflows/scan.yml içindeki cron ile
-her 6 saatte bir tetikler. Gerekli ortam değişkenleri (secrets):
-  SUPABASE_URL, SUPABASE_SERVICE_KEY, SERPER_API_KEY
-"""
+"""Ana otomasyon scripti."""
 import os
 import sys
 import datetime
@@ -27,6 +16,27 @@ def get_client():
         print("HATA: SUPABASE_URL / SUPABASE_SERVICE_KEY tanımlı değil.", file=sys.stderr)
         sys.exit(1)
     return create_client(url, key)
+
+
+def get_setting(supabase, key: str, default: str) -> str:
+    res = supabase.table("settings").select("value").eq("key", key).limit(1).execute()
+    if res.data:
+        return res.data[0]["value"]
+    return default
+
+
+def get_last_run_time(supabase):
+    res = (
+        supabase.table("runs")
+        .select("run_time")
+        .order("run_time", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not res.data:
+        return None
+    raw = res.data[0]["run_time"].replace("Z", "+00:00")
+    return datetime.datetime.fromisoformat(raw)
 
 
 def get_active_keywords(supabase) -> list[str]:
@@ -53,6 +63,25 @@ def main():
         sys.exit(1)
 
     supabase = get_client()
+
+    # ---- Sıklık kontrolü: ayarlanan süre dolmadıysa hiç taramadan çık ----
+    interval_str = get_setting(supabase, "scan_interval_minutes", "360")
+    try:
+        interval_minutes = int(interval_str)
+    except ValueError:
+        interval_minutes = 360
+
+    last_run = get_last_run_time(supabase)
+    if last_run is not None:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        elapsed_minutes = (now - last_run).total_seconds() / 60
+        if elapsed_minutes < interval_minutes:
+            print(
+                f"Henüz zamanı gelmedi. Son tarama {elapsed_minutes:.1f} dk önce, "
+                f"ayarlanan sıklık {interval_minutes} dk. Çıkılıyor."
+            )
+            return
+
     keywords = get_active_keywords(supabase)
 
     if not keywords:
@@ -61,13 +90,13 @@ def main():
 
     all_changes = []
     run_details = {}
-    new_snapshots = []  # run_id atandıktan sonra yazılacak
+    new_snapshots = []
 
     for kw in keywords:
         print(f"Taranıyor: {kw}")
         try:
             new_result = search_keyword(kw, serper_key)
-        except Exception as e:  # API hatası, rate limit vb.
+        except Exception as e:
             run_details[kw] = {"error": str(e)}
             print(f"  HATA ({kw}): {e}", file=sys.stderr)
             continue
@@ -99,7 +128,7 @@ def main():
         supabase.table("runs")
         .insert(
             {
-                "run_time": datetime.datetime.utcnow().isoformat(),
+                "run_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "event_type": event_type,
                 "summary": summary,
                 "details": run_details,
