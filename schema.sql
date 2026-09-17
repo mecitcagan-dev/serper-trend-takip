@@ -27,11 +27,20 @@ create table if not exists keyword_snapshots (
   created_at timestamptz not null default now()
 );
 
+-- NOT: "settings" tablosu önceki sürümde eksikti — bu yüzden arayüzde
+-- "settings" tablosuna yapılan istekler 403 dönüyordu (tablo RLS ile
+-- korunuyor ama hiç policy'si yoktu / tablo hiç yoktu). Aşağıda ekleniyor.
+create table if not exists settings (
+  key text primary key,
+  value text not null
+);
+
 -- Row Level Security açık (proje oluştururken "Enable automatic RLS" seçtiğin için
 -- bu tablolar zaten varsayılan olarak kilitli geliyor olabilir - yine de garantiye alalım)
 alter table keywords enable row level security;
 alter table runs enable row level security;
 alter table keyword_snapshots enable row level security;
+alter table settings enable row level security;
 
 -- Artık siteye girmek için giriş yapmak (Supabase Auth) zorunlu olduğundan,
 -- frontend erişimi "anon" yerine "authenticated" rolüne veriliyor: sadece

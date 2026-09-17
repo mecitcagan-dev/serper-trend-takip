@@ -19,6 +19,17 @@ let keywordWorkingList = []; // modal içindeki geçici çalışma listesi
 
 let authMode = 'login'; // 'login' | 'signup'
 let appInitialized = false; // loadRuns() sadece ilk açılışta çağrılsın diye
+let pendingVerifyEmail = ''; // "maili tekrar gönder" için son kayıt email'i
+
+// Sayfa email doğrulama linkinden mi açıldı? (Supabase bunu URL hash'ine
+// #...&type=signup şeklinde ekler). Bunu supabase-js hash'i işlemeden ÖNCE
+// yakalıyoruz, çünkü işlemden sonra history.replaceState ile temizleniyor.
+const cameFromEmailConfirmation =
+	/type=(signup|magiclink|recovery|invite)/.test(window.location.hash);
+
+// Her ortamda (localhost, GitHub Pages, vs.) doğru adrese geri dönmesi için
+// sabit "localhost:3000" yerine sayfanın kendi adresini kullanıyoruz.
+const AUTH_REDIRECT_URL = window.location.origin + window.location.pathname;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,9 +62,23 @@ function translateAuthError(message) {
 	return found ? found.tr : message || 'Bilinmeyen bir hata oluştu.';
 }
 
+// ---- authGate içindeki 3 görünüm arasında geçiş ----
+function showAuthView(view) {
+	document
+		.getElementById('authBoxForm')
+		.classList.toggle('hidden', view !== 'form');
+	document
+		.getElementById('authBoxVerify')
+		.classList.toggle('hidden', view !== 'verify');
+	document
+		.getElementById('authBoxVerified')
+		.classList.toggle('hidden', view !== 'verified');
+}
+
 function showAuthGate() {
 	document.getElementById('authGate').classList.remove('hidden');
 	document.getElementById('appRoot').classList.add('hidden');
+	showAuthView('form');
 }
 
 function showApp() {
@@ -63,6 +88,118 @@ function showApp() {
 		appInitialized = true;
 		loadRuns();
 	}
+}
+
+// Email linkine tıklayınca dönülen ekran: kısa bir "Doğrulandı" onayı
+// gösterip otomatik olarak (F5'e gerek kalmadan) uygulamaya geçer.
+function showVerifiedThenEnterApp() {
+	document.getElementById('authGate').classList.remove('hidden');
+	document.getElementById('appRoot').classList.add('hidden');
+	showAuthView('verified');
+	setTimeout(showApp, 1400);
+}
+
+function showVerifyPendingScreen(email) {
+	pendingVerifyEmail = email;
+	document.getElementById('verifyEmailText').textContent = email;
+	document.getElementById('resendStatus').textContent = '';
+	showAuthView('verify');
+}
+
+async function resendVerificationEmail() {
+	const status = document.getElementById('resendStatus');
+	if (!pendingVerifyEmail) return;
+	status.textContent = 'Gönderiliyor…';
+	const { error } = await sb.auth.resend({
+		type: 'signup',
+		email: pendingVerifyEmail,
+		options: { emailRedirectTo: AUTH_REDIRECT_URL },
+	});
+	status.textContent = error
+		? translateAuthError(error.message)
+		: 'Doğrulama maili tekrar gönderildi ✓';
+}
+
+// ---- Google ile devam et ----
+async function handleGoogleAuth() {
+	const errorEl = document.getElementById('authError');
+	errorEl.textContent = '';
+	const { error } = await sb.auth.signInWithOAuth({
+		provider: 'google',
+		options: { redirectTo: AUTH_REDIRECT_URL },
+	});
+	if (error) errorEl.textContent = translateAuthError(error.message);
+	// Başarılıysa tarayıcı Google'a yönlenir, dönüşte onAuthStateChange devreye girer.
+}
+
+// ---- Şifre gücü göstergesi ----
+// Not: Bu sadece bir GÖSTERGE — zayıf şifreyle kayıt olmayı engellemiyoruz,
+// sadece kullanıcıyı bilgilendiriyoruz (istenen davranış bu).
+const COMMON_WEAK_PASSWORDS = [
+	'12345678',
+	'123456789',
+	'1234567890',
+	'password',
+	'password1',
+	'qwerty123',
+	'11111111',
+	'00000000',
+	'asdasdasd',
+	'123123123',
+	'sifre123',
+	'şifre123',
+];
+
+function scorePassword(pw) {
+	if (!pw) return { score: 0, label: '', percent: 0, color: '' };
+
+	let score = 0;
+	if (pw.length >= 8) score++;
+	if (pw.length >= 12) score++;
+	if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+	if (/[0-9]/.test(pw)) score++;
+	if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+	const lower = pw.toLowerCase();
+	const isRepeatedGroup = /^(.{1,4})\1{1,}$/.test(pw); // "123123123", "ababab"
+	const isAllSameChar = /^(.)\1+$/.test(pw); // "aaaaaaaa"
+	const isSequential =
+		/(0123|1234|2345|3456|4567|5678|6789|7890|abcd|bcde|cdef|qwer|asdf|zxcv)/.test(
+			lower,
+		);
+	const isCommon = COMMON_WEAK_PASSWORDS.includes(lower);
+
+	if (isRepeatedGroup || isAllSameChar || isSequential || isCommon) {
+		score = Math.max(0, score - 3);
+	}
+
+	score = Math.max(0, Math.min(4, score));
+	const labels = ['Çok zayıf', 'Zayıf', 'Orta', 'İyi', 'Güçlü'];
+	const colors = ['#ef6a63', '#ef6a63', '#f5a623', '#5b8cff', '#3ddc84'];
+	return {
+		score,
+		label: labels[score],
+		color: colors[score],
+		percent: (score / 4) * 100,
+	};
+}
+
+function updatePasswordStrengthUI() {
+	const wrap = document.getElementById('pwStrength');
+	const bar = document.getElementById('pwStrengthBar');
+	const label = document.getElementById('pwStrengthLabel');
+	const pw = document.getElementById('authPassword').value;
+
+	if (authMode !== 'signup' || !pw) {
+		wrap.classList.add('hidden');
+		return;
+	}
+	wrap.classList.remove('hidden');
+	const result = scorePassword(pw);
+	bar.style.width = result.percent + '%';
+	bar.style.background = result.color;
+	label.textContent = result.label;
+	label.style.color = result.color;
 }
 
 function setAuthMode(mode) {
@@ -76,6 +213,11 @@ function setAuthMode(mode) {
 		mode === 'login' ? 'current-password' : 'new-password';
 	document.getElementById('authError').textContent = '';
 	document.getElementById('authInfo').textContent = '';
+	document.getElementById('authSubtitle').textContent =
+		mode === 'login'
+			? 'Kelimelerini takip etmeye devam etmek için giriş yap.'
+			: 'Ücretsiz bir hesap oluştur, taramalarını birkaç dakika içinde kur.';
+	updatePasswordStrengthUI();
 }
 
 async function handleAuthSubmit(e) {
@@ -120,16 +262,20 @@ async function handleAuthSubmit(e) {
 			}
 			// Başarılı girişte onAuthStateChange showApp()'i tetikler.
 		} else {
-			const { data, error } = await sb.auth.signUp({ email, password });
+			const { data, error } = await sb.auth.signUp({
+				email,
+				password,
+				options: { emailRedirectTo: AUTH_REDIRECT_URL },
+			});
 			if (error) {
 				errorEl.textContent = translateAuthError(error.message);
 				return;
 			}
 			if (data.user && !data.session) {
-				// Supabase projesinde email doğrulama açıksa oturum hemen açılmaz.
-				infoEl.textContent =
-					'Kayıt başarılı. Devam etmeden önce email adresine gelen onay linkine tıkla.';
-				setAuthMode('login');
+				// Supabase projesinde email doğrulama açıksa oturum hemen açılmaz —
+				// artık küçük bir uyarı yerine tam ekran bir "gelen kutunu kontrol et"
+				// görünümü gösteriyoruz.
+				showVerifyPendingScreen(email);
 			}
 			// data.session doluysa onAuthStateChange showApp()'i tetikler.
 		}
@@ -568,13 +714,48 @@ document.querySelectorAll('.auth-tab').forEach((tab) => {
 document
 	.getElementById('authForm')
 	.addEventListener('submit', handleAuthSubmit);
+document
+	.getElementById('googleAuthBtn')
+	.addEventListener('click', handleGoogleAuth);
+document
+	.getElementById('authPassword')
+	.addEventListener('input', updatePasswordStrengthUI);
+
+document.getElementById('passwordToggleBtn').addEventListener('click', () => {
+	const input = document.getElementById('authPassword');
+	input.type = input.type === 'password' ? 'text' : 'password';
+});
+
+document
+	.getElementById('resendVerificationBtn')
+	.addEventListener('click', resendVerificationEmail);
+document.getElementById('backToLoginBtn').addEventListener('click', () => {
+	document.getElementById('authForm').reset();
+	setAuthMode('login');
+	showAuthView('form');
+});
+document.getElementById('continueToAppBtn').addEventListener('click', showApp);
 
 // ---------- Başlangıç: oturum kontrolü ----------
 
-sb.auth.onAuthStateChange((_event, session) => {
+let handledInitialSession = false;
+
+sb.auth.onAuthStateChange((event, session) => {
 	if (session) {
+		// Email onay linkinden veya Google OAuth dönüşünden geldiyse (ve bu daha
+		// önce ele alınmadıysa) önce kısa bir "doğrulandı" onayı göster, F5
+		// gerekmeden otomatik olarak uygulamaya geç.
+		if (!handledInitialSession && cameFromEmailConfirmation) {
+			handledInitialSession = true;
+			// Supabase-js token'ları URL'den zaten okudu; adres çubuğunu temizle.
+			history.replaceState(null, '', window.location.pathname);
+			showVerifiedThenEnterApp();
+			return;
+		}
+		handledInitialSession = true;
 		showApp();
 	} else {
+		handledInitialSession = true;
 		appInitialized = false;
 		allRuns = [];
 		selectedRunId = null;
