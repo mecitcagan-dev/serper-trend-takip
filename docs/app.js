@@ -15,6 +15,138 @@ let currentFilter = 'all';
 let selectedRunId = null;
 let keywordWorkingList = []; // modal içindeki geçici çalışma listesi
 
+// ---------- Giriş / Kayıt ----------
+
+let authMode = 'login'; // 'login' | 'signup'
+let appInitialized = false; // loadRuns() sadece ilk açılışta çağrılsın diye
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const AUTH_ERROR_MESSAGES = [
+	{ match: /invalid login credentials/i, tr: 'Email veya şifre hatalı.' },
+	{
+		match: /user already registered|already registered/i,
+		tr: 'Bu email zaten kayıtlı. "Giriş Yap" sekmesini kullan.',
+	},
+	{
+		match: /email not confirmed/i,
+		tr: 'Email adresini onaylaman gerekiyor. Gelen kutunu kontrol et.',
+	},
+	{
+		match: /password should be at least/i,
+		tr: 'Şifre en az 8 karakter olmalı.',
+	},
+	{
+		match: /unable to validate email address|invalid email/i,
+		tr: 'Geçerli bir email adresi gir.',
+	},
+	{
+		match: /rate limit/i,
+		tr: 'Çok fazla deneme yapıldı. Biraz sonra tekrar dene.',
+	},
+];
+
+function translateAuthError(message) {
+	const found = AUTH_ERROR_MESSAGES.find((e) => e.match.test(message || ''));
+	return found ? found.tr : message || 'Bilinmeyen bir hata oluştu.';
+}
+
+function showAuthGate() {
+	document.getElementById('authGate').classList.remove('hidden');
+	document.getElementById('appRoot').classList.add('hidden');
+}
+
+function showApp() {
+	document.getElementById('authGate').classList.add('hidden');
+	document.getElementById('appRoot').classList.remove('hidden');
+	if (!appInitialized) {
+		appInitialized = true;
+		loadRuns();
+	}
+}
+
+function setAuthMode(mode) {
+	authMode = mode;
+	document.querySelectorAll('.auth-tab').forEach((tab) => {
+		tab.classList.toggle('active', tab.dataset.mode === mode);
+	});
+	document.getElementById('authSubmitBtn').textContent =
+		mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol';
+	document.getElementById('authPassword').autocomplete =
+		mode === 'login' ? 'current-password' : 'new-password';
+	document.getElementById('authError').textContent = '';
+	document.getElementById('authInfo').textContent = '';
+}
+
+async function handleAuthSubmit(e) {
+	e.preventDefault();
+	const errorEl = document.getElementById('authError');
+	const infoEl = document.getElementById('authInfo');
+	const submitBtn = document.getElementById('authSubmitBtn');
+	errorEl.textContent = '';
+	infoEl.textContent = '';
+
+	const email = document.getElementById('authEmail').value.trim();
+	const password = document.getElementById('authPassword').value;
+
+	// ---- İstemci tarafı doğrulama ----
+	if (!email) {
+		errorEl.textContent = 'Email adresi gerekli.';
+		return;
+	}
+	if (!EMAIL_RE.test(email)) {
+		errorEl.textContent = 'Geçerli bir email adresi gir.';
+		return;
+	}
+	if (!password) {
+		errorEl.textContent = 'Şifre gerekli.';
+		return;
+	}
+	if (authMode === 'signup' && password.length < 8) {
+		errorEl.textContent = 'Şifre en az 8 karakter olmalı.';
+		return;
+	}
+
+	submitBtn.disabled = true;
+	submitBtn.textContent =
+		authMode === 'login' ? 'Giriş yapılıyor…' : 'Kayıt olunuyor…';
+
+	try {
+		if (authMode === 'login') {
+			const { error } = await sb.auth.signInWithPassword({ email, password });
+			if (error) {
+				errorEl.textContent = translateAuthError(error.message);
+				return;
+			}
+			// Başarılı girişte onAuthStateChange showApp()'i tetikler.
+		} else {
+			const { data, error } = await sb.auth.signUp({ email, password });
+			if (error) {
+				errorEl.textContent = translateAuthError(error.message);
+				return;
+			}
+			if (data.user && !data.session) {
+				// Supabase projesinde email doğrulama açıksa oturum hemen açılmaz.
+				infoEl.textContent =
+					'Kayıt başarılı. Devam etmeden önce email adresine gelen onay linkine tıkla.';
+				setAuthMode('login');
+			}
+			// data.session doluysa onAuthStateChange showApp()'i tetikler.
+		}
+	} catch (err) {
+		console.error(err);
+		errorEl.textContent = 'Beklenmeyen bir hata oluştu, tekrar dene.';
+	} finally {
+		submitBtn.disabled = false;
+		submitBtn.textContent = authMode === 'login' ? 'Giriş Yap' : 'Kayıt Ol';
+	}
+}
+
+async function handleLogout() {
+	await sb.auth.signOut();
+	// onAuthStateChange showAuthGate()'i tetikler.
+}
+
 // ---------- Activity Feed ----------
 
 async function loadRuns() {
@@ -426,5 +558,29 @@ document
 			e.target.classList.remove('open');
 	});
 
-// ---------- Başlangıç ----------
-loadRuns();
+document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+// ---------- Giriş/Kayıt olay bağlamaları ----------
+
+document.querySelectorAll('.auth-tab').forEach((tab) => {
+	tab.addEventListener('click', () => setAuthMode(tab.dataset.mode));
+});
+document
+	.getElementById('authForm')
+	.addEventListener('submit', handleAuthSubmit);
+
+// ---------- Başlangıç: oturum kontrolü ----------
+
+sb.auth.onAuthStateChange((_event, session) => {
+	if (session) {
+		showApp();
+	} else {
+		appInitialized = false;
+		allRuns = [];
+		selectedRunId = null;
+		showAuthGate();
+	}
+});
+
+// onAuthStateChange sayfa yüklenince zaten mevcut oturumu bir kez bildirir,
+// bu yüzden ayrıca getSession() çağırmaya gerek yok.

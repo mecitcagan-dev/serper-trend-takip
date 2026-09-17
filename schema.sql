@@ -33,28 +33,42 @@ alter table keywords enable row level security;
 alter table runs enable row level security;
 alter table keyword_snapshots enable row level security;
 
--- Frontend (anon key ile tarayıcıdan) sadece OKUMA yapabilsin: runs ve snapshots
-create policy "anon_select_runs" on runs
-  for select to anon using (true);
+-- Artık siteye girmek için giriş yapmak (Supabase Auth) zorunlu olduğundan,
+-- frontend erişimi "anon" yerine "authenticated" rolüne veriliyor: sadece
+-- oturum açmış kullanıcılar okuyup düzenleyebilir. NOT: bu kurallar henüz
+-- kullanıcıya özel değil (user_id filtresi yok) — bu, sıradaki "kullanıcı
+-- bazlı veri izolasyonu" maddesinde eklenecek.
 
-create policy "anon_select_snapshots" on keyword_snapshots
-  for select to anon using (true);
+-- Daha önce schema.sql'i çalıştırdıysan eski "anon_*" kuralları hâlâ
+-- duruyor olabilir — güvenli tekrar çalıştırma için önce onları kaldırıyoruz.
+drop policy if exists "anon_select_runs" on runs;
+drop policy if exists "anon_select_snapshots" on keyword_snapshots;
+drop policy if exists "anon_select_keywords" on keywords;
+drop policy if exists "anon_insert_keywords" on keywords;
+drop policy if exists "anon_update_keywords" on keywords;
+drop policy if exists "anon_delete_keywords" on keywords;
 
--- Frontend, kelime listesini okuyup DÜZENLEYEBİLSİN (Kelimeleri Düzenle butonu için)
-create policy "anon_select_keywords" on keywords
-  for select to anon using (true);
+create policy "authenticated_select_runs" on runs
+  for select to authenticated using (true);
 
-create policy "anon_insert_keywords" on keywords
-  for insert to anon with check (true);
+create policy "authenticated_select_snapshots" on keyword_snapshots
+  for select to authenticated using (true);
 
-create policy "anon_update_keywords" on keywords
-  for update to anon using (true);
+create policy "authenticated_select_keywords" on keywords
+  for select to authenticated using (true);
 
-create policy "anon_delete_keywords" on keywords
-  for delete to anon using (true);
+create policy "authenticated_insert_keywords" on keywords
+  for insert to authenticated with check (true);
+
+create policy "authenticated_update_keywords" on keywords
+  for update to authenticated using (true);
+
+create policy "authenticated_delete_keywords" on keywords
+  for delete to authenticated using (true);
 
 -- Not: GitHub Actions script'i service_role key kullanacak, o RLS'i otomatik
--- atlar (bypass), yani yukarıdaki kurallar sadece anon/frontend içindir.
+-- atlar (bypass), yani yukarıdaki kurallar sadece giriş yapmış frontend
+-- kullanıcıları içindir.
 
 -- Başlangıç kelimeleri (istersen değiştir/sil)
 insert into keywords (keyword) values

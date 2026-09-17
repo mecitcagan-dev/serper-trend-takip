@@ -506,6 +506,123 @@ select:focus-visible {
 	outline-offset: 2px;
 }
 
+/* ----- Erişim durumu ----- */
+.hidden {
+	display: none !important;
+}
+
+/* ----- Giriş / Kayıt ekranı ----- */
+.auth-gate {
+	position: fixed;
+	inset: 0;
+	background: var(--bg-rail);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 100;
+	padding: 20px;
+}
+.auth-gate.hidden {
+	display: none;
+}
+.auth-box {
+	width: min(360px, 100%);
+	background: var(--bg-elevated);
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	padding: 28px 26px 24px;
+	text-align: center;
+}
+.auth-logo {
+	width: 40px;
+	height: 40px;
+	margin: 0 auto 14px;
+	border-radius: 10px;
+	background: var(--accent-soft);
+	color: var(--accent);
+	font-size: 12px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.auth-title {
+	font-size: 17px;
+	font-weight: 700;
+	margin: 0 0 18px;
+	letter-spacing: -0.01em;
+}
+.auth-tabs {
+	display: flex;
+	background: var(--bg-rail);
+	border: 1px solid var(--border-soft);
+	border-radius: 9px;
+	padding: 3px;
+	margin-bottom: 18px;
+}
+.auth-tab {
+	flex: 1;
+	border: none;
+	background: none;
+	color: var(--text-secondary);
+	padding: 8px 0;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 7px;
+	cursor: pointer;
+}
+.auth-tab.active {
+	background: var(--accent-soft);
+	color: var(--accent);
+}
+#authForm {
+	text-align: left;
+	display: flex;
+	flex-direction: column;
+}
+#authForm label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--text-secondary);
+	margin: 10px 0 6px;
+}
+#authForm input {
+	width: 100%;
+	padding: 10px 11px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--bg-rail);
+	color: var(--text-primary);
+	font-family: inherit;
+	font-size: 13.5px;
+}
+#authForm input:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+.auth-error {
+	color: var(--danger);
+	font-size: 12.5px;
+	margin-top: 10px;
+	min-height: 0;
+	line-height: 1.5;
+}
+.auth-info {
+	color: var(--text-secondary);
+	font-size: 12.5px;
+	margin-top: 6px;
+	min-height: 0;
+	line-height: 1.5;
+}
+.auth-submit {
+	width: 100%;
+	margin-top: 16px;
+}
+.auth-submit:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
 /* ----- Mobil uyum ----- */
 @media (max-width: 900px) {
 	.app {

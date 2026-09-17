@@ -57,7 +57,18 @@ Repo → **Actions** sekmesi → "Serper Trend Taramasi" workflow'unu seç →
 **Run workflow** ile manuel tetikle. Yeşil ✓ görünce Supabase'de `runs`
 tablosunda yeni bir satır oluşmuş olmalı.
 
-### 6. Frontend'i doldur ve yayınla
+### 6. Auth ayarı (opsiyonel)
+
+Supabase Dashboard → **Authentication → Providers → Email**: varsayılan olarak
+kayıt sonrası email onayı istenir. Test sırasında hızlı ilerlemek istersen
+**"Confirm email"** seçeneğini kapatabilirsin — o zaman kayıt olan kullanıcı
+anında giriş yapılmış olur. Prod'da açık bırakman önerilir.
+
+`schema.sql`'i tekrar çalıştırman, eski `anon_*` RLS kurallarını kaldırıp
+yerine `authenticated_*` kurallarını koyar (artık siteye sadece giriş yapmış
+kullanıcılar erişebilir).
+
+### 7. Frontend'i doldur ve yayınla
 
 1. `site/config.js` içindeki iki değeri doldur:
    ```js

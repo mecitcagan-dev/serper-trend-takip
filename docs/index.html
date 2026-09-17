@@ -13,7 +13,44 @@
 		<link rel="stylesheet" href="style.css" />
 	</head>
 	<body>
-		<div class="app">
+		<!-- Giriş / Kayıt ekranı -->
+		<div class="auth-gate" id="authGate">
+			<div class="auth-box">
+				<div class="auth-logo">STT</div>
+				<h1 class="auth-title">Serper Trend Takip</h1>
+				<div class="auth-tabs">
+					<button class="auth-tab active" type="button" data-mode="login">
+						Giriş Yap
+					</button>
+					<button class="auth-tab" type="button" data-mode="signup">
+						Kayıt Ol
+					</button>
+				</div>
+				<form id="authForm" novalidate>
+					<label for="authEmail">Email</label>
+					<input
+						type="email"
+						id="authEmail"
+						autocomplete="email"
+						placeholder="ornek@mail.com"
+					/>
+					<label for="authPassword">Şifre</label>
+					<input
+						type="password"
+						id="authPassword"
+						autocomplete="current-password"
+						placeholder="En az 8 karakter"
+					/>
+					<div class="auth-error" id="authError"></div>
+					<div class="auth-info" id="authInfo"></div>
+					<button type="submit" class="save-btn auth-submit" id="authSubmitBtn">
+						Giriş Yap
+					</button>
+				</form>
+			</div>
+		</div>
+
+		<div class="app hidden" id="appRoot">
 			<!-- Sol ince ikon şeridi -->
 			<div class="rail">
 				<div class="rail-logo" title="Serper Trend Takip">STT</div>
@@ -77,6 +114,28 @@
 									d="M12.5 5.5 14 4l2 2-1.5 1.5-2-2Z"
 									stroke="currentColor"
 									stroke-width="1.5"
+									stroke-linejoin="round"
+								/>
+							</svg>
+						</button>
+						<button
+							class="icon-btn"
+							id="logoutBtn"
+							title="Çıkış yap"
+							aria-label="Çıkış yap"
+						>
+							<svg viewBox="0 0 20 20" fill="none">
+								<path
+									d="M8 17H5.5A1.5 1.5 0 0 1 4 15.5v-11A1.5 1.5 0 0 1 5.5 3H8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
+								/>
+								<path
+									d="M13 13.5 16.5 10 13 6.5M16.3 10H8"
+									stroke="currentColor"
+									stroke-width="1.5"
+									stroke-linecap="round"
 									stroke-linejoin="round"
 								/>
 							</svg>
