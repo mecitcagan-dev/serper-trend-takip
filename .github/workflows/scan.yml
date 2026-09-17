@@ -3,7 +3,7 @@ name: Serper Trend Taramasi
 on:
   schedule:
     # Her 6 saatte bir: 00:00, 06:00, 12:00, 18:00 UTC
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {} # "Run workflow" ile manuel de tetiklenebilir
 
 jobs:
