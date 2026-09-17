@@ -21,6 +21,7 @@ Pages (arayüz).
 ### 2. Supabase anahtarlarını al
 
 Supabase Dashboard → **Settings → API**:
+
 - **Project URL**
 - **anon / public key**
 - **service_role key** (⚠️ bunu asla frontend'e veya herkese açık bir yere koyma)
@@ -44,11 +45,11 @@ kodun ve iş mantığının herkese açık olmaması daha güvenli).
 
 Repo → **Settings → Secrets and variables → Actions → New repository secret**:
 
-| İsim | Değer |
-|---|---|
-| `SUPABASE_URL` | Supabase Project URL |
+| İsim                   | Değer                     |
+| ---------------------- | ------------------------- |
+| `SUPABASE_URL`         | Supabase Project URL      |
 | `SUPABASE_SERVICE_KEY` | Supabase service_role key |
-| `SERPER_API_KEY` | serper.dev API anahtarın |
+| `SERPER_API_KEY`       | serper.dev API anahtarın  |
 
 ### 5. Otomasyonu test et
 
@@ -60,8 +61,8 @@ tablosunda yeni bir satır oluşmuş olmalı.
 
 1. `site/config.js` içindeki iki değeri doldur:
    ```js
-   const SUPABASE_URL = "https://xxxx.supabase.co";
-   const SUPABASE_ANON_KEY = "eyJ...";  // sadece anon/public key
+   const SUPABASE_URL = 'https://xxxx.supabase.co';
+   const SUPABASE_ANON_KEY = 'eyJ...'; // sadece anon/public key
    ```
 2. Değişikliği GitHub'a push'la.
 3. Repo → **Settings → Pages** → Source: "Deploy from a branch" → Branch:
@@ -82,7 +83,7 @@ tablosunda yeni bir satır oluşmuş olmalı.
 
 ## Bilinmesi gerekenler
 
-- GitHub Actions'ın cron tetikleyicisi *best-effort*'tur — yoğun saatlerde
+- GitHub Actions'ın cron tetikleyicisi _best-effort_'tur — yoğun saatlerde
   birkaç dakika gecikebilir, kritik değil.
 - Frontend, herkese açık bir link olduğu için (şifre korumasız) sadece linki
   bilenler erişebilir. İstersen ileride basit bir parola ekranı eklenebilir.
