@@ -193,10 +193,25 @@
 						<h1>Aktivite</h1>
 						<div class="project-context">
 							<div class="project-picker-label">
-								<label for="projectSelect">Aktif proje</label>
+								<label for="projectSelectTrigger">Aktif proje</label>
 							</div>
 							<div class="project-picker-row">
-								<select id="projectSelect" aria-label="Aktif proje"></select>
+								<div class="project-select-wrap" id="projectSelectWrap">
+									<button
+										class="project-select-trigger"
+										id="projectSelectTrigger"
+										type="button"
+										aria-haspopup="listbox"
+										aria-expanded="false"
+										disabled
+									>
+										<span id="projectSelectLabel">Proje yükleniyor…</span>
+										<svg class="project-select-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+											<path d="m5.5 7.5 4.5 5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+										</svg>
+									</button>
+									<div class="project-select-menu hidden" id="projectSelectMenu" role="listbox"></div>
+								</div>
 								<button
 									class="project-add-btn"
 									id="editProjectBtn"
@@ -213,6 +228,10 @@
 						</div>
 					</div>
 					<div class="header-actions">
+						<button class="header-key-btn" id="serperKeyBtn" type="button" title="Serper API key ekle">
+							<span class="header-key-plus" aria-hidden="true">+</span>
+							<span id="serperKeyBtnLabel">API Key</span>
+						</button>
 						<div class="tools-wrap" id="toolsMenuWrap">
 							<button
 								class="header-tool-toggle"
@@ -222,7 +241,9 @@
 								aria-haspopup="true"
 							>
 								<span>Araçlar</span>
-								<span class="header-tool-chevron" aria-hidden="true">⌄</span>
+								<svg class="header-tool-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+									<path d="m5.5 7.5 4.5 5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
 							</button>
 							<div class="tools-menu hidden" id="toolsMenu">
 								<button
@@ -251,6 +272,26 @@
 								</button>
 							</div>
 						</div>
+						<div class="interval-wrap" id="intervalWrap">
+							<button
+								class="interval-toggle"
+								id="intervalToggleBtn"
+								type="button"
+								aria-expanded="false"
+								aria-haspopup="menu"
+								title="Tarama sıklığını değiştir"
+							>
+								<svg class="interval-clock-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+									<circle cx="10" cy="10" r="6.8" stroke="currentColor" stroke-width="1.5" />
+									<path d="M10 6.5V10l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+								<span id="intervalLabel">6H</span>
+								<svg class="header-tool-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+									<path d="m5.5 7.5 4.5 5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+							</button>
+							<div class="interval-menu hidden" id="intervalMenu" role="menu"></div>
+						</div>
 						<button
 							class="icon-btn"
 							id="refreshBtn"
@@ -269,11 +310,11 @@
 						</button>
 						<button
 							class="icon-btn"
-							id="settingsBtn"
-							title="Ayarlar"
-							aria-label="Ayarlar"
-						>
-							<svg viewBox="0 0 20 20" fill="none">
+								id="settingsBtn"
+								title="Ayarlar"
+								aria-label="Ayarlar"
+							>
+								<svg class="settings-icon" viewBox="0 0 20 20" fill="none">
 								<path
 									d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
 									stroke="currentColor"
@@ -328,7 +369,7 @@
 								</div>
 								<div class="profile-dropdown-divider"></div>
 								<button class="profile-dropdown-item" id="themeToggleBtn">
-									<span id="themeIcon">☀️</span>
+									<span class="theme-icon" id="themeIcon" aria-hidden="true"></span>
 									<span id="themeLabel">Açık Mod</span>
 								</button>
 								<div class="profile-dropdown-divider"></div>
@@ -358,17 +399,6 @@
 					</div>
 				</header>
 
-				<!-- Serper key uyarı banner -->
-				<div class="serper-banner hidden" id="serperKeyBanner">
-					<span id="serperBannerText"
-						>⚠️ Serper API key'in henüz tanımlanmamış — taramalar
-						başlamayacak.</span
-					>
-					<button class="serper-banner-btn" id="serperBannerBtn">
-						Key Ekle
-					</button>
-				</div>
-
 				<button
 					class="dashboard-toggle"
 					id="dashboardToggleBtn"
@@ -382,25 +412,23 @@
 							>Son tarama, aktif kelimeler ve kota</span
 						>
 					</span>
-					<span class="dashboard-toggle-chevron" aria-hidden="true">⌄</span>
+					<svg class="dashboard-toggle-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+						<path d="m5.5 7.5 4.5 5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
 				</button>
 
 				<div class="project-dashboard" id="projectDashboard">
-					<div class="dashboard-card">
+					<div class="dashboard-card dashboard-card-datetime">
 						<span>Son tarama</span>
 						<strong id="dashboardLastRun">—</strong>
 					</div>
-					<div class="dashboard-card">
+					<div class="dashboard-card dashboard-card-datetime">
 						<span>Sıradaki tarama</span>
 						<strong id="dashboardNextRun">—</strong>
 					</div>
 					<div class="dashboard-card">
 						<span>Aktif kelime</span>
 						<strong id="dashboardKeywordCount">—</strong>
-					</div>
-					<div class="dashboard-card">
-						<span>Kota durumu</span>
-						<strong id="dashboardQuota">—</strong>
 					</div>
 					<div class="dashboard-status" id="dashboardStatus"></div>
 				</div>
@@ -416,15 +444,25 @@
 					<div class="feed-empty" id="feedEmpty">Yükleniyor…</div>
 				</div>
 
-				<button class="project-add-fab" id="addProjectBtn" type="button">
-					<span class="project-add-fab-icon" aria-hidden="true">+</span>
-					<span>Yeni proje</span>
-				</button>
 			</div>
 
 			<!-- Sağ panel: Detay -->
 			<div class="detail-panel" id="detailPanel">
-				<div class="detail-empty">Bir kart seç, detaylı raporu burada gör.</div>
+				<section class="project-create-card" id="projectCreateCard">
+					<div class="project-create-heading">
+						<span class="project-create-icon" aria-hidden="true">+</span>
+						<div>
+							<h2>Yeni proje</h2>
+							<p>Yeni müşteri veya domain için ayrı bir takip alanı oluştur.</p>
+						</div>
+					</div>
+					<button class="project-create-btn" id="addProjectBtn" type="button">
+						Proje oluştur
+					</button>
+				</section>
+				<div id="detailContent">
+					<div class="detail-empty">Bir kart seç, detaylı raporu burada gör.</div>
+				</div>
 			</div>
 		</div>
 
@@ -640,56 +678,45 @@
 					</button>
 				</div>
 				<div class="modal-body">
-					<!-- Serper API Key -->
-					<div class="settings-section">
-						<label class="settings-section-label" for="serperKeyInput"
-							>Serper API Key</label
-						>
-						<input
-							type="text"
-							id="serperKeyInput"
-							class="settings-input"
-							placeholder="serper.dev hesabından al"
-							autocomplete="off"
-							spellcheck="false"
-						/>
-						<p class="modal-hint">
-							<a href="https://serper.dev" target="_blank" rel="noopener"
-								>serper.dev</a
-							>
-							hesabından alabilirsin. Her kullanıcı kendi kotasını kullanır,
-							birbirini etkilemez.
-						</p>
-						<span class="quota-badge hidden" id="sharedQuotaBadge"></span>
+					<div class="settings-info-card">
+						<svg class="settings-info-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+							<circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" />
+							<path d="M10 9v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+							<circle cx="10" cy="6.2" r=".8" fill="currentColor" />
+						</svg>
+						<div>
+							<strong>Kontroller üst araç çubuğunda</strong>
+							<p>API key yönetimi ve tarama sıklığı artık doğrudan üstteki butonlardan yapılır.</p>
+						</div>
 					</div>
+				</div>
+			</div>
+		</div>
 
-					<!-- Tarama Sıklığı -->
+		<!-- Serper API Key Modal -->
+		<div class="modal-overlay" id="apiKeyModalOverlay">
+			<div class="modal">
+				<div class="modal-header">
+					<h2>Serper API Key</h2>
+					<button class="icon-btn" id="closeApiKeyModalBtn" aria-label="Kapat">
+						<svg viewBox="0 0 20 20" fill="none">
+							<path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+						</svg>
+					</button>
+				</div>
+				<div class="modal-body">
+					<p class="modal-hint">
+						Serper API key'ini <a href="https://serper.dev" target="_blank" rel="noopener">serper.dev</a> hesabından alabilirsin. Her kullanıcı kendi kotasını kullanır.
+					</p>
 					<div class="settings-section">
-						<label class="settings-section-label" for="intervalSelect"
-							>Tarama Sıklığı</label
-						>
-						<p class="modal-hint">
-							Otomasyon yaklaşık 5 dakikada bir kontrol ediyor, ama gerçek taramayı sadece
-							burada seçtiğin süre geçtiyse yapıyor. Serper.dev kotanı korumak
-							için test dışında 6 saatin altına inmemeni öneririz.
-						</p>
-						<select id="intervalSelect">
-							<option value="0">Her tetiklemede (test — bekleme yok)</option>
-							<option value="1">1 dakika (test)</option>
-							<option value="5">5 dakika (test)</option>
-							<option value="10">10 dakika (test)</option>
-							<option value="30">30 dakika</option>
-							<option value="60">1 saat</option>
-							<option value="180">3 saat</option>
-							<option value="360">6 saat (önerilen)</option>
-							<option value="720">12 saat</option>
-							<option value="1440">24 saat</option>
-						</select>
+						<label class="settings-section-label" for="serperKeyInput">Serper API Key</label>
+						<input type="text" id="serperKeyInput" class="settings-input" placeholder="serper.dev hesabından al" autocomplete="off" spellcheck="false" />
+						<span class="quota-badge hidden" id="sharedQuotaBadge"></span>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<span class="save-status" id="settingsSaveStatus"></span>
-					<button class="save-btn" id="saveSettingsBtn">Kaydet</button>
+					<span class="save-status" id="apiKeySaveStatus"></span>
+					<button class="save-btn" id="saveApiKeyBtn" type="button">Kaydet</button>
 				</div>
 			</div>
 		</div>

@@ -36,10 +36,18 @@ export function renderProfileAvatar(user) {
 
 export function applyRolePermissions(role = 'admin') {
 	const readOnly = role === 'client_viewer';
-	['settingsBtn', 'editKeywordsBtn', 'addProjectBtn', 'editProjectBtn', 'geoBtn'].forEach(
-		(id) => document.getElementById(id)?.classList.toggle('hidden', readOnly),
+	[
+		'settingsBtn',
+		'editKeywordsBtn',
+		'addProjectBtn',
+		'editProjectBtn',
+		'geoBtn',
+		'serperKeyBtn',
+		'intervalToggleBtn',
+		'projectCreateCard',
+	].forEach((id) =>
+		document.getElementById(id)?.classList.toggle('hidden', readOnly),
 	);
-	if (readOnly) document.getElementById('serperKeyBanner')?.classList.add('hidden');
 	const roleEl = document.getElementById('profileInfoRole');
 	if (roleEl) roleEl.textContent = ROLE_LABELS[role] || 'Yönetici';
 }

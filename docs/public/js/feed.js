@@ -121,7 +121,7 @@ export function selectRun(runId) {
 }
 
 export function renderDetail(run) {
-	const panel = document.getElementById('detailPanel');
+	const panel = document.getElementById('detailContent') || document.getElementById('detailPanel');
 	if (!run) {
 		panel.innerHTML =
 			'<div class="detail-empty">Bir kart seç, detaylı raporu burada gör.</div>';

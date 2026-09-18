@@ -13,22 +13,36 @@ function setProjectStatus(message, isError = false) {
 	status.classList.toggle('error', isError);
 }
 
-function renderProjectPicker() {
-	const select = document.getElementById('projectSelect');
-	const meta = document.getElementById('projectMeta');
-	if (!select) return;
+function setProjectPickerOpen(isOpen) {
+	const wrap = document.getElementById('projectSelectWrap');
+	const menu = document.getElementById('projectSelectMenu');
+	const trigger = document.getElementById('projectSelectTrigger');
+	if (!wrap || !menu || !trigger) return;
+	wrap.classList.toggle('open', isOpen);
+	menu.classList.toggle('hidden', !isOpen);
+	trigger.setAttribute('aria-expanded', String(isOpen));
+}
 
-	select.innerHTML = state.projects
+function renderProjectPicker() {
+	const trigger = document.getElementById('projectSelectTrigger');
+	const label = document.getElementById('projectSelectLabel');
+	const menu = document.getElementById('projectSelectMenu');
+	const meta = document.getElementById('projectMeta');
+	if (!trigger || !label || !menu) return;
+
+	menu.innerHTML = state.projects
 		.map(
 			(project) =>
-				`<option value="${project.id}">${escapeHtml(project.name)}${
+				`<button class="project-select-option" type="button" role="option" data-project-id="${project.id}" aria-selected="${String(project.id) === String(state.currentProject?.id)}"><span class="project-option-name">${escapeHtml(project.name)}</span>${
 					project.client_name ? ` — ${escapeHtml(project.client_name)}` : ''
-				}</option>`,
+				}</button>`,
 		)
 		.join('');
 
 	if (state.currentProject) {
-		select.value = String(state.currentProject.id);
+		label.textContent = state.currentProject.client_name
+			? `${state.currentProject.name} — ${state.currentProject.client_name}`
+			: state.currentProject.name;
 		if (meta) {
 			const target = state.currentProject.target_domain
 				? `Hedef: ${state.currentProject.target_domain}`
@@ -40,12 +54,13 @@ function renderProjectPicker() {
 			meta.textContent = `${target} · ${market}`;
 		}
 	} else {
-		select.innerHTML = '<option value="">Proje bulunamadı</option>';
-		select.value = '';
+		menu.innerHTML = '<div class="project-select-empty">Proje bulunamadı</div>';
+		label.textContent = 'Proje bulunamadı';
 		if (meta) meta.textContent = 'Önce bir proje oluştur.';
 	}
 
-	select.disabled = !state.projects.length;
+	trigger.disabled = !state.projects.length;
+	setProjectPickerOpen(false);
 	const editButton = document.getElementById('editProjectBtn');
 	if (editButton) editButton.disabled = !state.currentProject;
 }
@@ -182,19 +197,32 @@ async function saveProject(event) {
 	await loadProjects({ notify: true });
 }
 
-async function handleProjectChange(event) {
-	const projectId = Number(event.target.value);
+async function handleProjectChange(projectId) {
 	state.currentProject =
-		state.projects.find((project) => project.id === projectId) || null;
+		state.projects.find((project) => String(project.id) === String(projectId)) || null;
 	renderProjectPicker();
 	if (state.currentProject) await onProjectChange(state.currentProject);
 }
 
 export function init(projectChangeHandler) {
 	onProjectChange = projectChangeHandler || (() => {});
-	document
-		.getElementById('projectSelect')
-		.addEventListener('change', handleProjectChange);
+	const projectTrigger = document.getElementById('projectSelectTrigger');
+	const projectMenu = document.getElementById('projectSelectMenu');
+	projectTrigger?.addEventListener('click', (event) => {
+		event.stopPropagation();
+		const isOpen = projectTrigger.getAttribute('aria-expanded') === 'true';
+		setProjectPickerOpen(!isOpen);
+	});
+	projectMenu?.addEventListener('click', (event) => {
+		const option = event.target.closest('[data-project-id]');
+		if (!option) return;
+		setProjectPickerOpen(false);
+		handleProjectChange(option.dataset.projectId);
+	});
+	document.addEventListener('click', (event) => {
+		const wrap = document.getElementById('projectSelectWrap');
+		if (wrap && !wrap.contains(event.target)) setProjectPickerOpen(false);
+	});
 	document
 		.getElementById('addProjectBtn')
 		.addEventListener('click', openProjectModal);

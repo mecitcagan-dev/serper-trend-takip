@@ -5,6 +5,7 @@ import { renderProfileAvatar, applyRolePermissions } from './profileMenu.js';
 import { loadRuns, subscribeToRuns, unsubscribeFromRuns } from './feed.js';
 import { loadProjects } from './projects.js';
 import { loadProjectDashboard } from './dashboard.js';
+import { loadInterval } from './intervalControl.js';
 
 let authMode = 'login';
 let pendingVerifyEmail = '';
@@ -84,9 +85,13 @@ async function showApp() {
 			loadProjectDashboard();
 		}
 		checkSerperKey();
+		loadInterval();
 	} else if (hasProject) {
 		loadRuns();
 		loadProjectDashboard();
+		loadInterval();
+	} else {
+		loadInterval();
 	}
 }
 

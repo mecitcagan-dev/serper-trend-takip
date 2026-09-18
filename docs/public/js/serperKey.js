@@ -9,10 +9,9 @@ export const SHARED_KEY_LIMIT = 10;
 
 export async function checkSerperKey() {
 	if (!state.currentUser) return;
-	const banner = document.getElementById('serperKeyBanner');
-	const bannerText = document.getElementById('serperBannerText');
-	const bannerBtn = document.getElementById('serperBannerBtn');
-	if (!banner) return;
+	const button = document.getElementById('serperKeyBtn');
+	const label = document.getElementById('serperKeyBtnLabel');
+	if (!button || !label) return;
 	try {
 		const { data } = await sb
 			.from('profiles')
@@ -27,22 +26,21 @@ export async function checkSerperKey() {
 		);
 
 		if (hasOwnKey) {
-			banner.classList.add('hidden');
+			button.classList.add('has-key');
+			label.textContent = 'Key hazır';
+			button.title = 'Serper API key düzenle';
 		} else if (remaining > 0) {
-			banner.classList.remove('hidden');
-			banner.classList.add('info');
-			bannerText.textContent = `🎁 Ücretsiz deneme modundasın — ${remaining}/${SHARED_KEY_LIMIT} tarama hakkın kaldı.`;
-			bannerBtn.textContent = "Kendi Key'imi Ekle";
+			button.classList.remove('has-key');
+			label.textContent = 'API Key';
+			button.title = `Ücretsiz deneme kotası: ${remaining}/${SHARED_KEY_LIMIT}. Kendi key'ini ekle`;
 		} else {
-			banner.classList.remove('hidden');
-			banner.classList.remove('info');
-			bannerText.textContent =
-				"⚠️ Ücretsiz tarama hakkın bitti — devam etmek için kendi Serper API key'ini eklemen gerekiyor.";
-			bannerBtn.textContent = 'Key Ekle';
+			button.classList.remove('has-key');
+			label.textContent = 'Key Ekle';
+			button.title = 'Ücretsiz deneme kotası bitti; kendi Serper API key\'ini ekle';
 		}
 	} catch {
-		// profil henüz oluşturulmamış olabilir, sorun değil
-		banner.classList.remove('hidden');
-		banner.classList.remove('info');
+		// Profil henüz oluşturulmamış olabilir; buton yine de kullanılabilir.
+		button.classList.remove('has-key');
+		label.textContent = 'API Key';
 	}
 }

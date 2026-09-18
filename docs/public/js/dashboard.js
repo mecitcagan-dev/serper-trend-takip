@@ -9,28 +9,47 @@ function setText(id, value) {
 	if (element) element.textContent = value;
 }
 
-function formatDate(value) {
-	if (!value) return 'Henüz yok';
-	return new Date(value).toLocaleString('tr-TR', {
+function formatDate(value, multiline = false) {
+	if (!value) return 'Henüz tarama yapılmadı';
+	const date = new Date(value);
+	const datePart = date.toLocaleDateString('tr-TR', {
 		day: '2-digit',
 		month: '2-digit',
+	});
+	const timePart = date.toLocaleTimeString('tr-TR', {
 		hour: '2-digit',
 		minute: '2-digit',
 	});
+	return multiline ? `${datePart}\n${timePart}` : `${datePart} ${timePart}`;
 }
 
-function formatNextRun(lastRun, intervalMinutes) {
+function formatNextRun(lastRun, intervalMinutes, multiline = false) {
 	if (!lastRun) return 'İlk tarama bekleniyor';
 	const next = new Date(lastRun);
 	next.setMinutes(next.getMinutes() + intervalMinutes);
-	return formatDate(next.toISOString());
+	return formatDate(next.toISOString(), multiline);
+}
+
+function setQuotaCardVisible(isVisible) {
+	const dashboard = document.getElementById('projectDashboard');
+	const existing = document.getElementById('dashboardQuotaCard');
+	if (isVisible) {
+		if (existing) return;
+		const card = document.createElement('div');
+		card.className = 'dashboard-card';
+		card.id = 'dashboardQuotaCard';
+		card.innerHTML = '<span>Kota durumu</span><strong id="dashboardQuota">—</strong>';
+		dashboard?.querySelector('#dashboardStatus')?.before(card);
+		return;
+	}
+	existing?.remove();
 }
 
 function resetDashboard(message = '') {
-	setText('dashboardLastRun', '—');
-	setText('dashboardNextRun', '—');
-	setText('dashboardKeywordCount', '—');
-	setText('dashboardQuota', '—');
+	setQuotaCardVisible(false);
+	setText('dashboardLastRun', 'Henüz tarama yapılmadı');
+	setText('dashboardNextRun', 'İlk tarama bekleniyor');
+	setText('dashboardKeywordCount', 'Henüz kelime yok');
 	setText('dashboardToggleMeta', 'Son tarama, aktif kelimeler ve kota');
 	setText('dashboardStatus', message);
 }
@@ -90,6 +109,7 @@ export async function loadProjectDashboard() {
 	].find(Boolean);
 	if (firstError) {
 		console.error(firstError);
+		setQuotaCardVisible(false);
 		setText('dashboardToggleMeta', 'Proje özeti yüklenemedi');
 		setText('dashboardStatus', 'Proje özeti yüklenemedi.');
 		return;
@@ -103,18 +123,19 @@ export async function loadProjectDashboard() {
 		0,
 		SHARED_KEY_LIMIT - (profile?.shared_key_scans_used || 0),
 	);
+	const showQuotaCard = !hasOwnKey && remaining > 0;
+	setQuotaCardVisible(showQuotaCard);
 
-	setText('dashboardLastRun', formatDate(lastRun));
-	setText('dashboardNextRun', formatNextRun(lastRun, interval));
+	setText('dashboardLastRun', formatDate(lastRun, true));
+	setText('dashboardNextRun', formatNextRun(lastRun, interval, true));
 	setText('dashboardKeywordCount', String(keywordsResult.data?.length || 0));
-	setText(
-		'dashboardQuota',
-		hasOwnKey ? 'Kişisel key' : `${remaining}/${SHARED_KEY_LIMIT} ücretsiz`,
-	);
+	if (showQuotaCard) setText('dashboardQuota', `${remaining}/${SHARED_KEY_LIMIT} ücretsiz`);
 	const activeKeywordCount = keywordsResult.data?.length || 0;
 	const quotaLabel = hasOwnKey
 		? 'Kişisel key'
-		: `${remaining}/${SHARED_KEY_LIMIT} kota`;
+		: remaining > 0
+			? `${remaining}/${SHARED_KEY_LIMIT} kota`
+			: 'Kota tükendi';
 	setText(
 		'dashboardToggleMeta',
 		`${lastRun ? `Son: ${formatDate(lastRun)}` : 'Henüz tarama yok'} · ${activeKeywordCount} aktif kelime · ${quotaLabel}`,
