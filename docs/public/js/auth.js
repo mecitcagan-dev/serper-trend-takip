@@ -4,6 +4,7 @@ import { checkSerperKey } from './serperKey.js';
 import { renderProfileAvatar } from './profileMenu.js';
 import { loadRuns, subscribeToRuns, unsubscribeFromRuns } from './feed.js';
 import { loadProjects } from './projects.js';
+import { loadProjectDashboard } from './dashboard.js';
 
 let authMode = 'login';
 let pendingVerifyEmail = '';
@@ -70,10 +71,14 @@ async function showApp() {
 	const hasProject = await loadProjects({ notify: false });
 	if (!state.appInitialized) {
 		state.appInitialized = true;
-		if (hasProject) loadRuns();
+		if (hasProject) {
+			loadRuns();
+			loadProjectDashboard();
+		}
 		checkSerperKey();
 	} else if (hasProject) {
 		loadRuns();
+		loadProjectDashboard();
 	}
 }
 

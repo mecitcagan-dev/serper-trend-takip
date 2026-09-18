@@ -1,6 +1,7 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { escapeHtml, dayLabel, timeLabel } from './utils.js';
+import { loadProjectDashboard } from './dashboard.js';
 export const EVENT_META = {
 	yeni_rakip: {
 		icon: '<svg viewBox="0 0 20 20" fill="none"><circle cx="7.5" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 17c0-3 2.4-5.2 5-5.2s5 2.2 5 5.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M15.5 6.5v5M13 9h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
@@ -244,6 +245,7 @@ export function subscribeToRuns(userId) {
 				// Yeni run geldi — mevcut loadRuns() akışı (hata yönetimi dahil)
 				// aynen kullanılarak feed baştan yüklenir.
 				loadRuns();
+				loadProjectDashboard();
 			},
 		)
 		.subscribe();

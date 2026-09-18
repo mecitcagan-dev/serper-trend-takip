@@ -68,7 +68,7 @@ sonuç olarak taranabilmeli.
 `scan.py` bu değerleri Serper isteğine geçiriyor. Varsayılanlar Türkiye,
 Türkçe ve masaüstü. İstek gövdesini doğrulayan otomatik test geçti.
 
-### 4. Ajans dashboard'u ve proje bağlamı
+### 4. Ajans dashboard'u ve proje bağlamı — Kod hazır
 
 - Kullanıcı girişinden sonra müşteri/proje seçimi yapılabilecek.
 - Dashboard yalnızca seçili projenin kelimelerini, taramalarını ve
@@ -80,6 +80,11 @@ Türkçe ve masaüstü. İstek gövdesini doğrulayan otomatik test geçti.
 
 **Tamamlanma ölçütü:** Vayes çalışanı müşteri değiştirince ekrandaki tüm
 veriler doğru projeye göre yenilenmeli.
+
+**Kontrol:** Seçili projeye göre aktivite akışı, kelime modalı ve ücretsiz
+dashboard özeti yenileniyor. Özette son tarama, tahmini sonraki tarama, aktif
+kelime sayısı ve Serper kota durumu var. Realtime yeni tarama geldiğinde özet
+de yenileniyor; statik kontroller geçti.
 
 ### 5. Raporlama ve dışa aktarma
 

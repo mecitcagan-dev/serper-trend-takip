@@ -331,6 +331,43 @@ body {
 	color: #ffffff;
 }
 
+.project-dashboard {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 7px;
+	margin: 0 18px 10px;
+}
+.dashboard-card {
+	min-width: 0;
+	padding: 9px 10px;
+	border: 1px solid var(--border-soft);
+	border-radius: 8px;
+	background: var(--bg-rail);
+}
+.dashboard-card span,
+.dashboard-card strong {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.dashboard-card span {
+	font-size: 10.5px;
+	color: var(--text-tertiary);
+}
+.dashboard-card strong {
+	margin-top: 4px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--text-primary);
+}
+.dashboard-status {
+	grid-column: 1 / -1;
+	min-height: 15px;
+	font-size: 11px;
+	color: var(--text-tertiary);
+}
+
 .tabs {
 	display: flex;
 	gap: 6px;
@@ -1153,5 +1190,8 @@ select:focus-visible {
 	}
 	.project-picker-row select {
 		max-width: min(250px, 55vw);
+	}
+	.project-dashboard {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
