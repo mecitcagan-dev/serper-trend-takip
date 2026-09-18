@@ -29,9 +29,11 @@ function renderProjectPicker() {
 	if (state.currentProject) {
 		select.value = String(state.currentProject.id);
 		if (meta) {
-			meta.textContent = state.currentProject.target_domain
+			const target = state.currentProject.target_domain
 				? `Hedef: ${state.currentProject.target_domain}`
-				: 'Hedef domain henüz tanımlanmadı';
+				: 'Hedef domain yok';
+			const market = `${state.currentProject.country_code || 'tr'} / ${state.currentProject.language_code || 'tr'} / ${state.currentProject.device || 'desktop'}`;
+			meta.textContent = `${target} · ${market}`;
 		}
 	} else {
 		select.innerHTML = '<option value="">Proje bulunamadı</option>';
@@ -92,6 +94,14 @@ function openProjectModal(project = null) {
 			project.client_name || '';
 		document.getElementById('projectDomainInput').value =
 			project.target_domain || '';
+		document.getElementById('projectCountryInput').value =
+			project.country_code || 'tr';
+		document.getElementById('projectLanguageInput').value =
+			project.language_code || 'tr';
+		document.getElementById('projectLocationInput').value =
+			project.location || '';
+		document.getElementById('projectDeviceInput').value =
+			project.device || 'desktop';
 	}
 	document.getElementById('projectSaveStatus').textContent = '';
 }
@@ -113,6 +123,16 @@ async function saveProject(event) {
 	const targetDomain = document
 		.getElementById('projectDomainInput')
 		.value.trim();
+	const countryCode = document
+		.getElementById('projectCountryInput')
+		.value.trim()
+		.toLowerCase();
+	const languageCode = document
+		.getElementById('projectLanguageInput')
+		.value.trim()
+		.toLowerCase();
+	const location = document.getElementById('projectLocationInput').value.trim();
+	const device = document.getElementById('projectDeviceInput').value;
 
 	if (!name) {
 		status.textContent = 'Proje adı gerekli.';
@@ -124,6 +144,10 @@ async function saveProject(event) {
 		name,
 		client_name: clientName,
 		target_domain: targetDomain || null,
+		country_code: countryCode || 'tr',
+		language_code: languageCode || 'tr',
+		location: location || null,
+		device: device === 'mobile' ? 'mobile' : 'desktop',
 	};
 	const query = editingProjectId
 		? sb

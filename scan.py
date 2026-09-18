@@ -60,7 +60,9 @@ def get_all_projects(supabase) -> list[dict]:
     user_id üzerinden ayrıca korunur."""
     res = (
         supabase.table("projects")
-        .select("id, user_id, name, target_domain, is_active")
+        .select(
+            "id, user_id, name, target_domain, country_code, language_code, location, device, is_active"
+        )
         .order("id")
         .execute()
     )
@@ -155,6 +157,7 @@ def scan_for_project(
     project_id: int,
     project_name: str,
     project_target_domain: str | None,
+    search_config: dict,
     serper_key: str,
 ) -> bool:
     """Tek bir proje için tarama yapar. Taramanın fiilen yapılıp
@@ -197,7 +200,7 @@ def scan_for_project(
         ).strip()
         print(f"  [{project_label}] Taranıyor: {kw}")
         try:
-            new_result = search_keyword(kw, serper_key)
+            new_result = search_keyword(kw, serper_key, search_config)
         except Exception as e:
             run_details[kw] = {"error": str(e)}
             print(f"    HATA ({kw}): {e}", file=sys.stderr)
@@ -315,6 +318,12 @@ def main():
                     project["id"],
                     project["name"],
                     project.get("target_domain"),
+                    {
+                        "country_code": project.get("country_code"),
+                        "language_code": project.get("language_code"),
+                        "location": project.get("location"),
+                        "device": project.get("device"),
+                    },
                     api_key,
                 )
                 if did_scan and using_shared:

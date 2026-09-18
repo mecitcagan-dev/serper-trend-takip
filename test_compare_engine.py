@@ -1,6 +1,8 @@
 import unittest
+from unittest.mock import Mock, patch
 
 from compare_engine import compare_results, find_domain_position
+from serper_client import search_keyword
 
 
 def organic(*links):
@@ -28,6 +30,36 @@ class TargetRankTests(unittest.TestCase):
         self.assertEqual(result["target_position"], 1)
         self.assertEqual(result["target_direction"], "baseline")
         self.assertFalse(result["has_changes"])
+
+
+class SearchConfigTests(unittest.TestCase):
+    @patch("serper_client.requests.post")
+    def test_search_config_is_sent_to_serper(self, post):
+        response = Mock()
+        response.json.return_value = {"organic": []}
+        post.return_value = response
+
+        search_keyword(
+            "seo ajansı",
+            "test-key",
+            {
+                "country_code": "gb",
+                "language_code": "en",
+                "location": "London, United Kingdom",
+                "device": "mobile",
+            },
+        )
+
+        self.assertEqual(
+            post.call_args.kwargs["json"],
+            {
+                "q": "seo ajansı",
+                "gl": "gb",
+                "hl": "en",
+                "location": "London, United Kingdom",
+                "device": "mobile",
+            },
+        )
 
 
 if __name__ == "__main__":

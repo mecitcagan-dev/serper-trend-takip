@@ -53,7 +53,7 @@ ve yön bilgisi eklendi. İlk ölçüm baz olarak işaretleniyor; domain ilk 10 
 çıktığında ayrıca gösteriliyor. Karşılaştırma motoru için 3 otomatik test ve
 Python/JavaScript statik kontrolleri geçti.
 
-### 3. Arama pazarı ve cihaz ayarları
+### 3. Arama pazarı ve cihaz ayarları — Kod hazır
 
 - Proje bazında ülke, dil, şehir/lokasyon ve cihaz seçilebilecek.
 - Türkiye dışı ve İngilizce aramalar desteklenecek.
@@ -63,6 +63,10 @@ Python/JavaScript statik kontrolleri geçti.
 
 **Tamamlanma ölçütü:** Aynı kelime farklı lokasyon veya cihaz ayarıyla ayrı
 sonuç olarak taranabilmeli.
+
+**Kontrol:** Proje formuna ülke, dil, lokasyon ve masaüstü/mobil seçimi eklendi;
+`scan.py` bu değerleri Serper isteğine geçiriyor. Varsayılanlar Türkiye,
+Türkçe ve masaüstü. İstek gövdesini doğrulayan otomatik test geçti.
 
 ### 4. Ajans dashboard'u ve proje bağlamı
 

@@ -157,6 +157,15 @@ grant select, insert, update, delete on public.keyword_snapshots to service_role
 alter table keywords add column if not exists target_domain text;
 create index if not exists idx_keywords_project_active
   on public.keywords(project_id, active);
+
+-- =============================================================
+-- v8: Arama pazarı ve cihaz ayarları
+-- =============================================================
+
+alter table projects add column if not exists country_code text not null default 'tr';
+alter table projects add column if not exists language_code text not null default 'tr';
+alter table projects add column if not exists location text;
+alter table projects add column if not exists device text not null default 'desktop';
 grant select, insert, update, delete on public.settings to service_role;
 grant usage on all sequences in schema public to service_role;
 

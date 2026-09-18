@@ -483,6 +483,50 @@
 							inputmode="url"
 						/>
 					</div>
+					<div class="settings-section">
+						<label class="settings-section-label" for="projectCountryInput"
+							>Arama ülkesi</label
+						>
+						<select class="settings-input" id="projectCountryInput">
+							<option value="tr">Türkiye</option>
+							<option value="gb">Birleşik Krallık</option>
+							<option value="us">Amerika Birleşik Devletleri</option>
+							<option value="de">Almanya</option>
+							<option value="nl">Hollanda</option>
+							<option value="fr">Fransa</option>
+						</select>
+					</div>
+					<div class="settings-section">
+						<label class="settings-section-label" for="projectLanguageInput"
+							>Arama dili</label
+						>
+						<input
+							class="settings-input"
+							id="projectLanguageInput"
+							value="tr"
+							maxlength="5"
+							placeholder="tr"
+						/>
+					</div>
+					<div class="settings-section">
+						<label class="settings-section-label" for="projectLocationInput"
+							>Şehir / lokasyon (opsiyonel)</label
+						>
+						<input
+							class="settings-input"
+							id="projectLocationInput"
+							placeholder="İstanbul, Türkiye"
+						/>
+					</div>
+					<div class="settings-section">
+						<label class="settings-section-label" for="projectDeviceInput"
+							>Cihaz</label
+						>
+						<select class="settings-input" id="projectDeviceInput">
+							<option value="desktop">Masaüstü</option>
+							<option value="mobile">Mobil</option>
+						</select>
+					</div>
 					<div class="modal-footer">
 						<span class="save-status" id="projectSaveStatus"></span>
 						<button class="save-btn" id="projectSaveBtn" type="submit">Kaydet</button>
