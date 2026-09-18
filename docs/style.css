@@ -53,31 +53,8 @@ body {
 
 .app {
 	display: grid;
-	grid-template-columns: 56px minmax(320px, 400px) 1fr;
+	grid-template-columns: minmax(320px, 400px) 1fr;
 	height: 100vh;
-}
-
-/* ----- Sol ince ikon şeridi ----- */
-.rail {
-	background: var(--bg-rail);
-	border-right: 1px solid var(--border-soft);
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding-top: 16px;
-}
-.rail-logo {
-	width: 34px;
-	height: 34px;
-	border-radius: 9px;
-	background: var(--accent-soft);
-	color: var(--accent);
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.02em;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 }
 
 /* ----- Orta panel: Activity feed ----- */
@@ -825,10 +802,7 @@ select:focus-visible {
 /* ----- Mobil uyum ----- */
 @media (max-width: 900px) {
 	.app {
-		grid-template-columns: 0 1fr;
-	}
-	.rail {
-		display: none;
+		grid-template-columns: 1fr;
 	}
 	.detail-panel {
 		display: none;

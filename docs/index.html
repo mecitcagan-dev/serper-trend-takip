@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -55,6 +55,7 @@
 						Kayıt Ol
 					</button>
 				</div>
+
 				<form id="authForm" novalidate>
 					<label for="authEmail">Email</label>
 					<input
@@ -169,9 +170,9 @@
 						/>
 					</svg>
 				</div>
-				<h1 class="auth-title">Email doğrulandı</h1>
+				<h1 class="auth-title">Email doğrulandı ✓</h1>
 				<p class="auth-subtitle">
-					Hesabın onaylandı, şimdi Serper Trend Takip'e girip devam edebilirsin.
+					Hesabın onaylandı. Serper Trend Takip'e girip takibe başlayabilirsin.
 				</p>
 				<button
 					type="button"
@@ -183,12 +184,8 @@
 			</div>
 		</div>
 
+		<!-- Ana uygulama -->
 		<div class="app hidden" id="appRoot">
-			<!-- Sol ince ikon şeridi -->
-			<div class="rail">
-				<div class="rail-logo" title="Serper Trend Takip">STT</div>
-			</div>
-
 			<!-- Orta panel: Activity feed -->
 			<div class="feed-panel">
 				<header class="feed-header">
@@ -213,8 +210,8 @@
 						<button
 							class="icon-btn"
 							id="settingsBtn"
-							title="Tarama sıklığı"
-							aria-label="Tarama sıklığı"
+							title="Ayarlar"
+							aria-label="Ayarlar"
 						>
 							<svg viewBox="0 0 20 20" fill="none">
 								<path
@@ -251,30 +248,65 @@
 								/>
 							</svg>
 						</button>
-						<button
-							class="icon-btn"
-							id="logoutBtn"
-							title="Çıkış yap"
-							aria-label="Çıkış yap"
-						>
-							<svg viewBox="0 0 20 20" fill="none">
-								<path
-									d="M8 17H5.5A1.5 1.5 0 0 1 4 15.5v-11A1.5 1.5 0 0 1 5.5 3H8"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-								/>
-								<path
-									d="M13 13.5 16.5 10 13 6.5M16.3 10H8"
-									stroke="currentColor"
-									stroke-width="1.5"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</button>
+						<!-- Profil avatarı -->
+						<div class="profile-wrap" id="profileWrap">
+							<button
+								class="profile-avatar-btn"
+								id="profileAvatarBtn"
+								aria-label="Profil menüsü"
+							>
+								<span class="profile-initials" id="profileInitials">?</span>
+								<img class="profile-img hidden" id="profileImg" alt="" />
+							</button>
+							<div class="profile-dropdown hidden" id="profileDropdown">
+								<div class="profile-dropdown-info">
+									<div
+										class="profile-dropdown-email"
+										id="profileInfoEmail"
+									></div>
+								</div>
+								<div class="profile-dropdown-divider"></div>
+								<button class="profile-dropdown-item" id="themeToggleBtn">
+									<span id="themeIcon">☀️</span>
+									<span id="themeLabel">Açık Mod</span>
+								</button>
+								<div class="profile-dropdown-divider"></div>
+								<button
+									class="profile-dropdown-item profile-dropdown-danger"
+									id="logoutBtn"
+								>
+									<svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+										<path
+											d="M8 17H5.5A1.5 1.5 0 0 1 4 15.5v-11A1.5 1.5 0 0 1 5.5 3H8"
+											stroke="currentColor"
+											stroke-width="1.5"
+											stroke-linecap="round"
+										/>
+										<path
+											d="M13 13.5 16.5 10 13 6.5M16.3 10H8"
+											stroke="currentColor"
+											stroke-width="1.5"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+									Çıkış Yap
+								</button>
+							</div>
+						</div>
 					</div>
 				</header>
+
+				<!-- Serper key uyarı banner -->
+				<div class="serper-banner hidden" id="serperKeyBanner">
+					<span
+						>⚠️ Serper API key'in henüz tanımlanmamış — taramalar
+						başlamayacak.</span
+					>
+					<button class="serper-banner-btn" id="serperBannerBtn">
+						Key Ekle
+					</button>
+				</div>
 
 				<div class="tabs" id="tabs">
 					<button class="tab active" data-filter="all">Tümü</button>
@@ -298,7 +330,7 @@
 		<div class="modal-overlay" id="settingsModalOverlay">
 			<div class="modal">
 				<div class="modal-header">
-					<h2>Tarama Sıklığı</h2>
+					<h2>Ayarlar</h2>
 					<button
 						class="icon-btn"
 						id="closeSettingsModalBtn"
@@ -315,23 +347,51 @@
 					</button>
 				</div>
 				<div class="modal-body">
-					<p class="modal-hint">
-						Otomasyon her 10 dakikada bir kontrol ediyor, ama gerçek taramayı
-						sadece burada seçtiğin süre geçtiyse yapıyor. serper.dev kotanı
-						korumak için test dışında 6 saatin altına inmemeni öneririz.
-					</p>
-					<select id="intervalSelect">
-						<option value="0">Her tetiklemede (test — bekleme yok)</option>
-						<option value="1">1 dakika (test)</option>
-						<option value="5">5 dakika (test)</option>
-						<option value="10">10 dakika (test)</option>
-						<option value="30">30 dakika</option>
-						<option value="60">1 saat</option>
-						<option value="180">3 saat</option>
-						<option value="360">6 saat (önerilen)</option>
-						<option value="720">12 saat</option>
-						<option value="1440">24 saat</option>
-					</select>
+					<!-- Serper API Key -->
+					<div class="settings-section">
+						<label class="settings-section-label" for="serperKeyInput"
+							>Serper API Key</label
+						>
+						<input
+							type="text"
+							id="serperKeyInput"
+							class="settings-input"
+							placeholder="serper.dev hesabından al"
+							autocomplete="off"
+							spellcheck="false"
+						/>
+						<p class="modal-hint">
+							<a href="https://serper.dev" target="_blank" rel="noopener"
+								>serper.dev</a
+							>
+							hesabından alabilirsin. Her kullanıcı kendi kotasını kullanır,
+							birbirini etkilemez.
+						</p>
+					</div>
+
+					<!-- Tarama Sıklığı -->
+					<div class="settings-section">
+						<label class="settings-section-label" for="intervalSelect"
+							>Tarama Sıklığı</label
+						>
+						<p class="modal-hint">
+							Otomasyon her 10 dakikada bir kontrol ediyor, ama gerçek taramayı
+							sadece burada seçtiğin süre geçtiyse yapıyor. Serper.dev kotanı
+							korumak için test dışında 6 saatin altına inmemeni öneririz.
+						</p>
+						<select id="intervalSelect">
+							<option value="0">Her tetiklemede (test — bekleme yok)</option>
+							<option value="1">1 dakika (test)</option>
+							<option value="5">5 dakika (test)</option>
+							<option value="10">10 dakika (test)</option>
+							<option value="30">30 dakika</option>
+							<option value="60">1 saat</option>
+							<option value="180">3 saat</option>
+							<option value="360">6 saat (önerilen)</option>
+							<option value="720">12 saat</option>
+							<option value="1440">24 saat</option>
+						</select>
+					</div>
 				</div>
 				<div class="modal-footer">
 					<span class="save-status" id="settingsSaveStatus"></span>
