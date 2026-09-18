@@ -10,7 +10,7 @@ import * as settingsModal from './settingsModal.js';
 import * as auth from './auth.js';
 
 initTheme();
-profileMenu.init();
+profileMenu.init(auth.handleLogout);
 feed.init();
 keywordsModal.init();
 settingsModal.init();

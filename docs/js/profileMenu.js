@@ -1,5 +1,4 @@
 import { toggleTheme } from './theme.js';
-import { handleLogout } from './auth.js';
 
 export function renderProfileAvatar(user) {
 	if (!user) return;
@@ -31,7 +30,7 @@ function toggleProfileDropdown(e) {
 	if (dropdown) dropdown.classList.toggle('hidden');
 }
 
-export function init() {
+export function init(onLogout) {
 	document
 		.getElementById('profileAvatarBtn')
 		.addEventListener('click', toggleProfileDropdown);
@@ -44,6 +43,8 @@ export function init() {
 		}
 	});
 
-	document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
-	document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+	document
+		.getElementById('themeToggleBtn')
+		.addEventListener('click', toggleTheme);
+	document.getElementById('logoutBtn').addEventListener('click', onLogout);
 }
