@@ -133,7 +133,7 @@ def compare_results(
 
     target_changed = rank_details["target_direction"] in {"entered", "left"} or (
         rank_details["target_position_change"] is not None
-        and rank_details["target_position_change"] != 0
+        and abs(rank_details["target_position_change"]) >= POSITION_CHANGE_THRESHOLD
     )
     has_changes = bool(
         added_domains

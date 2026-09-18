@@ -246,6 +246,38 @@ grant select, insert, update, delete on public.geo_checks to service_role;
 grant usage on all sequences in schema public to service_role;
 create index if not exists idx_geo_checks_project_checked_at
   on public.geo_checks(project_id, checked_at desc);
+
+-- =============================================================
+-- v11: Eşzamanlı tarama kilidi
+-- =============================================================
+
+create table if not exists scan_leases (
+  project_id bigint primary key references public.projects(id) on delete cascade,
+  locked_until timestamptz not null,
+  acquired_at timestamptz not null default now()
+);
+
+grant select, insert, update, delete on public.scan_leases to service_role;
+
+create or replace function public.acquire_scan_lease(
+  p_project_id bigint,
+  p_lease_seconds integer default 300
+)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.scan_leases(project_id, locked_until, acquired_at)
+  values (p_project_id, now() + make_interval(secs => p_lease_seconds), now())
+  on conflict (project_id) do update
+    set locked_until = excluded.locked_until,
+        acquired_at = excluded.acquired_at
+    where scan_leases.locked_until <= now()
+  returning true;
+$$;
+
+grant execute on function public.acquire_scan_lease(bigint, integer) to service_role;
 grant select, insert, update, delete on public.settings to service_role;
 grant usage on all sequences in schema public to service_role;
 

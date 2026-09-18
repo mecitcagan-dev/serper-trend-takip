@@ -90,6 +90,26 @@ def increment_shared_key_usage(supabase, user_id: str, current_used: int):
     ).eq("id", user_id).execute()
 
 
+def acquire_scan_lease(supabase, project_id: int) -> bool:
+    """Aynı projenin iki scheduler tarafından aynı anda taranmasını önler.
+    Eski schema v11 henüz uygulanmadıysa mevcut tarama davranışı korunur."""
+    try:
+        result = supabase.rpc(
+            "acquire_scan_lease",
+            {"p_project_id": project_id, "p_lease_seconds": 300},
+        ).execute()
+        acquired = bool(result.data)
+        if not acquired:
+            print(f"  Proje {project_id} başka bir tarama tarafından kilitli, atlanıyor.")
+        return acquired
+    except Exception as e:
+        print(
+            f"UYARI: Proje kilidi kullanılamadı ({e}). v11 uygulanana kadar eski akış sürüyor.",
+            file=sys.stderr,
+        )
+        return True
+
+
 def get_user_setting(supabase, user_id: str, key: str, default: str) -> str:
     try:
         res = (
@@ -187,6 +207,9 @@ def scan_for_project(
     keywords = get_user_keywords(supabase, user_id, project_id)
     if not keywords:
         print(f"  [{project_label}] Aktif kelime yok, atlanıyor.")
+        return False
+
+    if not acquire_scan_lease(supabase, project_id):
         return False
 
     all_changes = []

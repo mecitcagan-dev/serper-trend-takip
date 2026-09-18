@@ -142,7 +142,7 @@ geçmiş kontroller tabloda listeleniyor. Ücretli AI API'si eklenmedi ve PAA/
 related verisi AI cevabı olarak etiketlenmedi. Bu ücretsiz sürüm manuel kanıt
 toplar; otomatik AI cevap taraması kapsam dışıdır.
 
-### 8. Veri kalitesi, kota ve tarama maliyeti
+### 8. Veri kalitesi, kota ve tarama maliyeti — Kod hazır
 
 - Çok kısa aralıkların üretimde gereksiz Serper tüketmesi engellenecek.
 - Sıralama ve rakip değişimlerinde gürültü azaltma kuralı uygulanacak.
@@ -152,6 +152,13 @@ toplar; otomatik AI cevap taraması kapsam dışıdır.
 
 **Tamamlanma ölçütü:** Pilot kullanımda gereksiz tekrar taramalar ve
 doğrulanamayan değişiklikler ölçülebilir biçimde azaltılmalı.
+
+**Kontrol:** Serper 408/425/429/5xx ve bağlantı hatalarında en fazla 3 deneme
+ile exponential backoff eklendi. Sıra değişiminde 2 basamak eşiği korunuyor;
+tek basamak hedef domain oynama gürültü sayılıyor. Proje başına 5 dakikalık
+ücretsiz lease ile eşzamanlı taramalar engelleniyor. Dashboard ortak ücretsiz
+kota ve gerçek tarama aralığını gösteriyor; varsayılan aralık 6 saat, test
+aralıkları arayüzde açıkça işaretli.
 
 ### 9. Ajans güvenliği ve teslim hazırlığı
 

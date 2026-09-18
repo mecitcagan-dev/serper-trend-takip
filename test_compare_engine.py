@@ -15,14 +15,33 @@ class TargetRankTests(unittest.TestCase):
         self.assertEqual(find_domain_position(results, "www.example.com"), 1)
 
     def test_reports_improved_target_position(self):
+        old = {
+            "organic": organic(
+                "https://example.com/page",
+                "https://other.test/one",
+                "https://other.test/two",
+            )
+        }
+        new = {
+            "organic": organic(
+                "https://other.test/one",
+                "https://other.test/two",
+                "https://example.com/page",
+            )
+        }
+        result = compare_results(old, new, "example.com")
+        self.assertEqual(result["target_position"], 3)
+        self.assertEqual(result["previous_target_position"], 1)
+        self.assertEqual(result["target_position_change"], -2)
+        self.assertEqual(result["target_direction"], "declined")
+        self.assertTrue(result["has_changes"])
+
+    def test_one_position_jitter_is_ignored(self):
         old = {"organic": organic("https://example.com/page", "https://other.test")}
         new = {"organic": organic("https://other.test", "https://example.com/page")}
         result = compare_results(old, new, "example.com")
-        self.assertEqual(result["target_position"], 2)
-        self.assertEqual(result["previous_target_position"], 1)
-        self.assertEqual(result["target_position_change"], -1)
         self.assertEqual(result["target_direction"], "declined")
-        self.assertTrue(result["has_changes"])
+        self.assertFalse(result["has_changes"])
 
     def test_first_run_is_baseline(self):
         result = compare_results(None, {"organic": organic("https://example.com")}, "example.com")
@@ -36,6 +55,8 @@ class SearchConfigTests(unittest.TestCase):
     @patch("serper_client.requests.post")
     def test_search_config_is_sent_to_serper(self, post):
         response = Mock()
+        response.status_code = 200
+        response.headers = {}
         response.json.return_value = {"organic": []}
         post.return_value = response
 
@@ -60,6 +81,19 @@ class SearchConfigTests(unittest.TestCase):
                 "device": "mobile",
             },
         )
+
+    @patch("serper_client.time.sleep")
+    @patch("serper_client.requests.post")
+    def test_retryable_response_is_retried(self, post, sleep):
+        retry = Mock(status_code=503, headers={})
+        success = Mock(status_code=200, headers={})
+        success.json.return_value = {"organic": []}
+        post.side_effect = [retry, success]
+
+        search_keyword("seo", "test-key")
+
+        self.assertEqual(post.call_count, 2)
+        sleep.assert_called_once_with(1)
 
 
 if __name__ == "__main__":

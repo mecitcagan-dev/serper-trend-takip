@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import time
+
 import requests
 
 SERPER_URL = "https://google.serper.dev/search"
+MAX_RETRIES = 3
+RETRYABLE_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
 
 
 def search_keyword(
@@ -29,14 +33,36 @@ def search_keyword(
     if device in {"desktop", "mobile"}:
         payload["device"] = device
 
-    response = requests.post(
-        SERPER_URL,
-        headers={
-            "X-API-KEY": api_key,
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=25,
-    )
-    response.raise_for_status()
-    return response.json()
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/json",
+    }
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.post(
+                SERPER_URL,
+                headers=headers,
+                json=payload,
+                timeout=25,
+            )
+        except requests.RequestException:
+            if attempt == MAX_RETRIES - 1:
+                raise
+            time.sleep(2**attempt)
+            continue
+
+        if response.status_code in RETRYABLE_STATUS_CODES:
+            if attempt == MAX_RETRIES - 1:
+                response.raise_for_status()
+            retry_after = response.headers.get("Retry-After")
+            try:
+                wait_seconds = max(1, min(30, int(retry_after))) if retry_after else 2**attempt
+            except ValueError:
+                wait_seconds = 2**attempt
+            time.sleep(wait_seconds)
+            continue
+
+        response.raise_for_status()
+        return response.json()
+
+    raise RuntimeError("Serper isteği beklenmedik biçimde tamamlanamadı.")
