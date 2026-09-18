@@ -6,7 +6,7 @@ on:
     # Bu sadece "kontrol" tetikleyicisi — gerçek tarama, kullanıcının
     # Ayarlar'da seçtiği sıklık (scan_interval_minutes) henüz dolmadıysa
     # scan.py tarafından atlanır.
-    - cron: '0 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {} # "Run workflow" ile manuel de tetiklenebilir
 
 jobs:
