@@ -35,5 +35,10 @@ bu sınırlama teslim notuna açıkça yazılacak.
 - Workflow fix'i hazırlandı: offset'li 5 dk cron, concurrency, timeout,
   secret preflight ve canlı Python logu.
 - README'ye ücretsiz cron-job.org → `workflow_dispatch` fallback'i eklendi.
-- Değişikliklerin GitHub'a gönderilip schedule/fallback ile doğrulanması
-  gerekiyor.
+- Değişiklikler `main` dalına gönderildi; manuel canlı çalıştırma başarılı,
+  `runs` kayıtları oluştu.
+- Yeni cron tanımı doğru olmasına rağmen 13:18 UTC'de schedule run'ı
+  oluşmadı. Son karar: GitHub Actions çalıştırıcı olarak kalacak, 5 dk
+  güvenilir tetikleme cron-job.org üzerinden yapılacak.
+- Kalan kurulum: kullanıcı cron-job.org job'ını ve sınırlı yetkili GitHub
+  token'ını oluşturacak; repo kodu bu `workflow_dispatch` akışını hazırlar.
