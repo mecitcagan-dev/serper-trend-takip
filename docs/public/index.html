@@ -189,7 +189,25 @@
 			<!-- Orta panel: Activity feed -->
 			<div class="feed-panel">
 				<header class="feed-header">
-					<h1>Aktivite</h1>
+					<div class="feed-heading">
+						<h1>Aktivite</h1>
+						<div class="project-context">
+							<div class="project-picker-row">
+								<label for="projectSelect">Proje</label>
+								<select id="projectSelect" aria-label="Aktif proje"></select>
+								<button
+									class="project-add-btn"
+									id="addProjectBtn"
+									type="button"
+									aria-label="Yeni proje ekle"
+								>
+									+
+								</button>
+							</div>
+							<div class="project-meta" id="projectMeta">Proje yükleniyor…</div>
+							<div class="project-status" id="projectStatus"></div>
+						</div>
+					</div>
 					<div class="header-actions">
 						<button
 							class="icon-btn"
@@ -398,6 +416,68 @@
 					<span class="save-status" id="settingsSaveStatus"></span>
 					<button class="save-btn" id="saveSettingsBtn">Kaydet</button>
 				</div>
+			</div>
+		</div>
+
+		<!-- Proje Modal -->
+		<div class="modal-overlay" id="projectModalOverlay">
+			<div class="modal">
+				<div class="modal-header">
+					<h2>Yeni Proje</h2>
+					<button
+						class="icon-btn"
+						id="closeProjectModalBtn"
+						aria-label="Kapat"
+						type="button"
+					>
+						<svg viewBox="0 0 20 20" fill="none">
+							<path
+								d="M5 5l10 10M15 5 5 15"
+								stroke="currentColor"
+								stroke-width="1.6"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+				</div>
+				<form class="modal-body" id="projectForm">
+					<div class="settings-section">
+						<label class="settings-section-label" for="projectNameInput"
+							>Proje adı</label
+						>
+						<input
+							class="settings-input"
+							id="projectNameInput"
+							required
+							placeholder="Örn. Vayes ana site"
+						/>
+					</div>
+					<div class="settings-section">
+						<label class="settings-section-label" for="projectClientInput"
+							>Müşteri adı</label
+						>
+						<input
+							class="settings-input"
+							id="projectClientInput"
+							placeholder="Örn. Vayes Digital"
+						/>
+					</div>
+					<div class="settings-section">
+						<label class="settings-section-label" for="projectDomainInput"
+							>Hedef domain (opsiyonel)</label
+						>
+						<input
+							class="settings-input"
+							id="projectDomainInput"
+							placeholder="vayes.com.tr"
+							inputmode="url"
+						/>
+					</div>
+					<div class="modal-footer">
+						<span class="save-status" id="projectSaveStatus"></span>
+						<button class="save-btn" type="submit">Kaydet</button>
+					</div>
+				</form>
 			</div>
 		</div>
 

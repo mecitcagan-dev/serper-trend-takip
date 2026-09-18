@@ -22,12 +22,20 @@ export const EVENT_META = {
 
 export async function loadRuns() {
 	const feedList = document.getElementById('feedList');
+	if (!state.currentProject) {
+		state.allRuns = [];
+		feedList.innerHTML =
+			'<div class="feed-empty">Görüntülemek için bir proje oluştur veya seç.</div>';
+		return;
+	}
 	feedList.innerHTML = '<div class="feed-empty">Yükleniyor…</div>';
 
-	// RLS sayesinde sadece currentUser'ın verileri gelir; ek filtre gerekmez.
+	// RLS kullanıcı izolasyonunu sağlar; project_id seçili proje bağlamını
+	// belirler ve farklı müşterilerin kayıtlarının karışmasını önler.
 	const { data, error } = await sb
 		.from('runs')
 		.select('*')
+		.eq('project_id', state.currentProject.id)
 		.order('run_time', { ascending: false })
 		.limit(100);
 

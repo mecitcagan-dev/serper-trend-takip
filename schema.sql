@@ -251,3 +251,166 @@ begin
     alter publication supabase_realtime add table public.runs;
   end if;
 end $$;
+
+-- =============================================================
+-- v6: Vayes için müşteri/proje ayrımı
+-- =============================================================
+
+-- Bir kullanıcı birden fazla müşteri/proje yönetebilir. Bu tablo yalnızca
+-- proje sahipliğini tutar; tüm müşteri verileri yine user_id ile izole edilir.
+create table if not exists projects (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  client_name text not null default '',
+  target_domain text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(user_id, name)
+);
+
+alter table projects enable row level security;
+
+drop policy if exists "users_own_projects_select" on projects;
+drop policy if exists "users_own_projects_insert" on projects;
+drop policy if exists "users_own_projects_update" on projects;
+drop policy if exists "users_own_projects_delete" on projects;
+
+create policy "users_own_projects_select" on projects
+  for select to authenticated using (user_id = auth.uid());
+create policy "users_own_projects_insert" on projects
+  for insert to authenticated with check (user_id = auth.uid());
+create policy "users_own_projects_update" on projects
+  for update to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+create policy "users_own_projects_delete" on projects
+  for delete to authenticated using (user_id = auth.uid());
+
+grant select, insert, update, delete on public.projects to authenticated;
+grant select, insert, update, delete on public.projects to service_role;
+grant usage on all sequences in schema public to service_role;
+
+-- Eski kullanıcıların verileri için birer varsayılan proje oluşturulur.
+insert into public.projects (user_id, name, client_name)
+select p.id, 'Genel Proje', coalesce(p.email, '')
+from public.profiles p
+where not exists (
+  select 1 from public.projects existing where existing.user_id = p.id
+);
+
+-- Yeni veri modeline geçiş için mevcut tablolara proje bağlantısı eklenir.
+alter table keywords add column if not exists project_id bigint references public.projects(id) on delete cascade;
+alter table runs add column if not exists project_id bigint references public.projects(id) on delete cascade;
+alter table keyword_snapshots add column if not exists project_id bigint references public.projects(id) on delete cascade;
+
+-- Eski satırlar kullanıcının ilk projesine taşınır.
+update public.keywords k
+set project_id = p.id
+from public.projects p
+where k.project_id is null
+  and p.user_id = k.user_id
+  and p.id = (
+    select min(first_project.id)
+    from public.projects first_project
+    where first_project.user_id = k.user_id
+  );
+
+update public.runs r
+set project_id = p.id
+from public.projects p
+where r.project_id is null
+  and p.user_id = r.user_id
+  and p.id = (
+    select min(first_project.id)
+    from public.projects first_project
+    where first_project.user_id = r.user_id
+  );
+
+update public.keyword_snapshots s
+set project_id = p.id
+from public.projects p
+where s.project_id is null
+  and p.user_id = s.user_id
+  and p.id = (
+    select min(first_project.id)
+    from public.projects first_project
+    where first_project.user_id = s.user_id
+  );
+
+-- RLS artık hem kullanıcı hem proje sahipliğini doğrular.
+drop policy if exists "user_select_keywords" on keywords;
+drop policy if exists "user_insert_keywords" on keywords;
+drop policy if exists "user_update_keywords" on keywords;
+drop policy if exists "user_delete_keywords" on keywords;
+
+create policy "user_select_keywords" on keywords
+  for select to authenticated
+  using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = keywords.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "user_insert_keywords" on keywords
+  for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = keywords.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "user_update_keywords" on keywords
+  for update to authenticated
+  using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = keywords.project_id and p.user_id = auth.uid()
+    )
+  )
+  with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = keywords.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "user_delete_keywords" on keywords
+  for delete to authenticated
+  using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = keywords.project_id and p.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "user_select_runs" on runs;
+create policy "user_select_runs" on runs
+  for select to authenticated
+  using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = runs.project_id and p.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "user_select_snapshots" on keyword_snapshots;
+create policy "user_select_snapshots" on keyword_snapshots
+  for select to authenticated
+  using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = keyword_snapshots.project_id and p.user_id = auth.uid()
+    )
+  );
+
+grant select, insert, update, delete on public.keywords to service_role;
+grant select, insert, update, delete on public.runs to service_role;
+grant select, insert, update, delete on public.keyword_snapshots to service_role;

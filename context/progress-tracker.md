@@ -9,9 +9,17 @@ Vayes'in SEO/GEO ajans operasyonunda kullanılabilir, çok müşterili bir iç
 Bu dosya şu anda yalnızca uygulama planıdır. Maddeler sırayla, her biri
 tamamlanıp doğrulandıktan sonra bir sonraki maddeye geçilerek uygulanacaktır.
 
+## Ücretsiz teknoloji sınırı
+
+- Yeni ücretli servis, ücretli API veya ücretli hosting eklenmeyecek.
+- Mevcut ücretsiz Supabase, GitHub Actions, cron-job.org ve Serper ücretsiz
+  kullanım hakkı birlikte kullanılacak.
+- Ücretli bir özellik zorunlu hâle gelirse bunun yerine ücretsiz içe aktarma,
+  tarayıcı içinde üretim veya manuel doğrulama akışı konulacak.
+
 ## Uygulama Sırası
 
-### 1. Müşteri ve proje ayrımı
+### 1. Müşteri ve proje ayrımı — Kod/migration hazır
 
 - Her kullanıcı birden fazla müşteri/proje oluşturabilecek.
 - Her projenin adı, müşteri adı, hedef domaini ve aktif/pasif durumu olacak.
@@ -22,6 +30,11 @@ tamamlanıp doğrulandıktan sonra bir sonraki maddeye geçilerek uygulanacaktı
 
 **Tamamlanma ölçütü:** Aynı hesapta en az iki müşteri projesi oluşturulup
 verileri birbirinden izole biçimde görüntülenebilmeli.
+
+**Kontrol:** Proje tablosu, varsayılan proje backfill'i, proje bağlamlı kelime/
+tarama sorguları ve RLS kuralları eklendi; Python ve JavaScript statik kontrolleri
+geçti. Canlı kabul için Supabase SQL Editor'de `schema.sql` içindeki v6 bölümü
+bir kez çalıştırılmalı ve iki proje ile kısa bir manuel izolasyon testi yapılmalı.
 
 ### 2. Hedef domain ve gerçek sıra takibi
 

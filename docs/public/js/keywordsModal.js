@@ -7,11 +7,19 @@ export async function openKeywordModal() {
 	document.getElementById('saveStatus').textContent = '';
 	document.getElementById('bulkAddStatus').textContent = '';
 	document.getElementById('bulkKeywordInput').value = '';
+	if (!state.currentProject) {
+		state.keywordWorkingList = [];
+		document.getElementById('saveStatus').textContent =
+			'Önce bir proje oluştur veya seç.';
+		renderKeywordList();
+		return;
+	}
 
-	// RLS sayesinde sadece kullanıcının kendi kelimeleri gelir
+	// RLS kullanıcı izolasyonunu sağlar; project_id seçili müşteriyi belirler.
 	const { data, error } = await sb
 		.from('keywords')
 		.select('*')
+		.eq('project_id', state.currentProject.id)
 		.order('id', { ascending: true });
 
 	if (error) {
@@ -97,11 +105,15 @@ function addKeywordsFromTextarea() {
 
 async function saveKeywords() {
 	if (!state.currentUser) return;
+	if (!state.currentProject) return;
 	const status = document.getElementById('saveStatus');
 	status.textContent = 'Kaydediliyor…';
 
-	// RLS: sadece kendi ID'li keywords gelir
-	const { data: originalRows } = await sb.from('keywords').select('id');
+	// Yalnızca seçili projenin satırları değiştirilir.
+	const { data: originalRows } = await sb
+		.from('keywords')
+		.select('id')
+		.eq('project_id', state.currentProject.id);
 	const originalIds = new Set((originalRows || []).map((r) => r.id));
 	const keptIds = new Set(
 		state.keywordWorkingList.filter((k) => k.id).map((k) => k.id),
@@ -123,7 +135,8 @@ async function saveKeywords() {
 				toInsert.map((k) => ({
 					keyword: k.keyword,
 					active: k.active,
-					user_id: state.currentUser.id, // ← kullanıcı izolasyonu için şart
+					user_id: state.currentUser.id,
+					project_id: state.currentProject.id,
 				})),
 			);
 		}

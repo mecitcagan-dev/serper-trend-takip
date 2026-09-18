@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { checkSerperKey } from './serperKey.js';
 import { renderProfileAvatar } from './profileMenu.js';
 import { loadRuns, subscribeToRuns, unsubscribeFromRuns } from './feed.js';
+import { loadProjects } from './projects.js';
 
 let authMode = 'login';
 let pendingVerifyEmail = '';
@@ -61,15 +62,18 @@ function showAuthGate() {
 	showAuthView('form');
 }
 
-function showApp() {
+async function showApp() {
 	document.getElementById('authGate').classList.add('hidden');
 	document.getElementById('appRoot').classList.remove('hidden');
 	renderProfileAvatar(state.currentUser);
 	subscribeToRuns(state.currentUser.id); // ← eklendi: F5'siz otomatik güncelleme
+	const hasProject = await loadProjects({ notify: false });
 	if (!state.appInitialized) {
 		state.appInitialized = true;
-		loadRuns();
+		if (hasProject) loadRuns();
 		checkSerperKey();
+	} else if (hasProject) {
+		loadRuns();
 	}
 }
 
@@ -306,6 +310,8 @@ export function init() {
 			state.currentUser = null;
 			handledInitialSession = true;
 			state.appInitialized = false;
+			state.projects = [];
+			state.currentProject = null;
 			state.allRuns = [];
 			state.selectedRunId = null;
 			unsubscribeFromRuns(); // ← eklendi: eski kanal/filtre temizlenir

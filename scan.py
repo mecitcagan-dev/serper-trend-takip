@@ -51,6 +51,19 @@ def get_all_profiles(supabase) -> list[dict]:
     return res.data or []
 
 
+def get_all_projects(supabase) -> list[dict]:
+    """Aktif olsun olmasın tüm proje kayıtlarını döner.
+    Proje sahipliği RLS ile değil service_role kullanan bu scriptte
+    user_id üzerinden ayrıca korunur."""
+    res = (
+        supabase.table("projects")
+        .select("id, user_id, name, is_active")
+        .order("id")
+        .execute()
+    )
+    return res.data or []
+
+
 def resolve_api_key(profile: dict, shared_key: str | None) -> tuple[str | None, bool]:
     """Bu kullanıcı için hangi Serper key'in kullanılacağına karar verir.
     Döner: (api_key veya None, paylaşımlı_key_mi)."""
@@ -89,11 +102,12 @@ def get_user_setting(supabase, user_id: str, key: str, default: str) -> str:
     return default
 
 
-def get_user_last_run_time(supabase, user_id: str):
+def get_user_last_run_time(supabase, user_id: str, project_id: int):
     res = (
         supabase.table("runs")
         .select("run_time")
         .eq("user_id", user_id)
+        .eq("project_id", project_id)
         .order("run_time", desc=True)
         .limit(1)
         .execute()
@@ -104,22 +118,26 @@ def get_user_last_run_time(supabase, user_id: str):
     return datetime.datetime.fromisoformat(raw)
 
 
-def get_user_keywords(supabase, user_id: str) -> list[str]:
+def get_user_keywords(supabase, user_id: str, project_id: int) -> list[str]:
     res = (
         supabase.table("keywords")
         .select("keyword")
         .eq("user_id", user_id)
+        .eq("project_id", project_id)
         .eq("active", True)
         .execute()
     )
     return [row["keyword"] for row in res.data]
 
 
-def get_last_snapshot(supabase, user_id: str, keyword: str) -> dict | None:
+def get_last_snapshot(
+    supabase, user_id: str, project_id: int, keyword: str
+) -> dict | None:
     res = (
         supabase.table("keyword_snapshots")
         .select("*")
         .eq("user_id", user_id)
+        .eq("project_id", project_id)
         .eq("keyword", keyword)
         .order("id", desc=True)
         .limit(1)
@@ -128,11 +146,18 @@ def get_last_snapshot(supabase, user_id: str, keyword: str) -> dict | None:
     return res.data[0] if res.data else None
 
 
-def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
-    """Tek bir kullanıcı için tarama yapar. Taramanın fiilen yapılıp
+def scan_for_project(
+    supabase,
+    user_id: str,
+    project_id: int,
+    project_name: str,
+    serper_key: str,
+) -> bool:
+    """Tek bir proje için tarama yapar. Taramanın fiilen yapılıp
     yapılmadığını (True/False) döner — paylaşımlı key kotası sadece
     gerçekten bir tarama yapıldığında düşülür."""
     short_id = user_id[:8]
+    project_label = f"{short_id}/{project_name}"
 
     # Sıklık kontrolü
     interval_str = get_user_setting(supabase, user_id, "scan_interval_minutes", "360")
@@ -141,20 +166,20 @@ def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
     except ValueError:
         interval_minutes = 360
 
-    last_run = get_user_last_run_time(supabase, user_id)
+    last_run = get_user_last_run_time(supabase, user_id, project_id)
     if last_run is not None:
         now = datetime.datetime.now(datetime.timezone.utc)
         elapsed_minutes = (now - last_run).total_seconds() / 60
         if elapsed_minutes < interval_minutes:
             print(
-                f"  [{short_id}] Henüz zamanı gelmedi "
+                f"  [{project_label}] Henüz zamanı gelmedi "
                 f"({elapsed_minutes:.1f}/{interval_minutes} dk). Atlanıyor."
             )
             return False
 
-    keywords = get_user_keywords(supabase, user_id)
+    keywords = get_user_keywords(supabase, user_id, project_id)
     if not keywords:
-        print(f"  [{short_id}] Aktif kelime yok, atlanıyor.")
+        print(f"  [{project_label}] Aktif kelime yok, atlanıyor.")
         return False
 
     all_changes = []
@@ -162,7 +187,7 @@ def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
     new_snapshots = []
 
     for kw in keywords:
-        print(f"  [{short_id}] Taranıyor: {kw}")
+        print(f"  [{project_label}] Taranıyor: {kw}")
         try:
             new_result = search_keyword(kw, serper_key)
         except Exception as e:
@@ -170,7 +195,7 @@ def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
             print(f"    HATA ({kw}): {e}", file=sys.stderr)
             continue
 
-        old_snapshot = get_last_snapshot(supabase, user_id, kw)
+        old_snapshot = get_last_snapshot(supabase, user_id, project_id, kw)
         changes = compare_results(old_snapshot, new_result)
         run_details[kw] = changes
 
@@ -180,6 +205,7 @@ def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
         new_snapshots.append({
             "keyword": kw,
             "user_id": user_id,
+            "project_id": project_id,
             "organic": new_result.get("organic", []),
             "people_also_ask": new_result.get("peopleAlsoAsk", []),
             "related_searches": new_result.get("relatedSearches", []),
@@ -196,6 +222,7 @@ def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
         supabase.table("runs")
         .insert({
             "user_id": user_id,
+            "project_id": project_id,
             "run_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "event_type": event_type,
             "summary": summary,
@@ -209,7 +236,7 @@ def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
         snap["run_id"] = run_id
         supabase.table("keyword_snapshots").insert(snap).execute()
 
-    print(f"  [{short_id}] Tamamlandı. run_id={run_id} | {summary}")
+    print(f"  [{project_label}] Tamamlandı. run_id={run_id} | {summary}")
     return True
 
 
@@ -237,11 +264,23 @@ def main():
         print("Kayıtlı profil bulunamadı. Çıkılıyor.")
         return
 
-    print(f"{len(profiles)} profil değerlendirilecek.")
+    projects = get_all_projects(supabase)
+    projects_by_user: dict[str, list[dict]] = {}
+    for project in projects:
+        if not project.get("is_active", True):
+            continue
+        projects_by_user.setdefault(project["user_id"], []).append(project)
+
+    print(f"{len(profiles)} profil ve {len(projects)} proje değerlendirilecek.")
 
     for profile in profiles:
         user_id = profile["id"]
         short_id = user_id[:8]
+
+        user_projects = projects_by_user.get(user_id, [])
+        if not user_projects:
+            print(f"  [{short_id}] Aktif proje yok, atlanıyor.")
+            continue
 
         api_key, using_shared = resolve_api_key(profile, shared_key)
         if not api_key:
@@ -252,22 +291,32 @@ def main():
             )
             continue
 
-        print(
-            f"Kullanıcı: {short_id}… "
-            + (
-                f"(paylaşımlı deneme key'i — {profile.get('shared_key_scans_used') or 0}/{SHARED_KEY_LIMIT} kullanılmış)"
-                if using_shared
-                else "(kendi key'i)"
-            )
-        )
-        try:
-            did_scan = scan_for_user(supabase, user_id, api_key)
-            if did_scan and using_shared:
-                increment_shared_key_usage(
-                    supabase, user_id, profile.get("shared_key_scans_used") or 0
+        for project in user_projects:
+            print(
+                f"Kullanıcı: {short_id}… | Proje: {project['name']} "
+                + (
+                    f"(paylaşımlı deneme key'i — {profile.get('shared_key_scans_used') or 0}/{SHARED_KEY_LIMIT} kullanılmış)"
+                    if using_shared
+                    else "(kendi key'i)"
                 )
-        except Exception as e:
-            print(f"  [{short_id}] HATA: {e}", file=sys.stderr)
+            )
+            try:
+                did_scan = scan_for_project(
+                    supabase,
+                    user_id,
+                    project["id"],
+                    project["name"],
+                    api_key,
+                )
+                if did_scan and using_shared:
+                    current_used = profile.get("shared_key_scans_used") or 0
+                    increment_shared_key_usage(supabase, user_id, current_used)
+                    profile["shared_key_scans_used"] = current_used + 1
+            except Exception as e:
+                print(
+                    f"  [{short_id}/{project['name']}] HATA: {e}",
+                    file=sys.stderr,
+                )
 
     print("Tüm profiller işlendi.")
 

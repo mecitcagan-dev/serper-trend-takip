@@ -3,6 +3,8 @@
 
 export const state = {
 	currentUser: null,
+	projects: [],
+	currentProject: null,
 	allRuns: [],
 	currentFilter: 'all',
 	selectedRunId: null,
