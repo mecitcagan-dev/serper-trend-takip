@@ -45,25 +45,28 @@ serper-trend-takip/
 │   └── workflows/
 │       └── scan.yml
 └── docs/                       ← Vercel Root Directory BURASI
-    ├── index.html
-    ├── style.css
-    ├── config.js                ← build sırasında OTOMATİK üretilir, repoya girmez
     ├── package.json
-    ├── vercel.json
+    ├── vercel.json               ← sadece buildCommand; outputDirectory
+    │                               belirtilmiyor, Vercel'in "public"
+    │                               varsayılanı doğrudan eşleşiyor
     ├── scripts/
-    │   └── generate-config.js
-    └── js/
-        ├── main.js               ← tek giriş noktası
-        ├── state.js              ← paylaşılan uygulama durumu
-        ├── supabaseClient.js     ← sb client
-        ├── auth.js               ← giriş/kayıt/oturum
-        ├── feed.js                ← Activity akışı + detay paneli
-        ├── keywordsModal.js      ← kelime ekleme/silme
-        ├── settingsModal.js      ← Serper key + tarama sıklığı
-        ├── serperKey.js          ← ücretsiz kota banner'ı
-        ├── profileMenu.js        ← avatar/dropdown, tema, çıkış
-        ├── theme.js              ← açık/koyu tema
-        └── utils.js              ← escapeHtml, tarih/saat formatlama
+    │   └── generate-config.js    ← config.js'i public/ altına üretir
+    └── public/                   ← Vercel Output Directory (varsayılan "public")
+        ├── index.html
+        ├── style.css
+        ├── config.js              ← build sırasında OTOMATİK üretilir, repoya girmez
+        └── js/
+            ├── main.js               ← tek giriş noktası
+            ├── state.js              ← paylaşılan uygulama durumu
+            ├── supabaseClient.js     ← sb client
+            ├── auth.js               ← giriş/kayıt/oturum
+            ├── feed.js                ← Activity akışı + detay paneli
+            ├── keywordsModal.js      ← kelime ekleme/silme
+            ├── settingsModal.js      ← Serper key + tarama sıklığı
+            ├── serperKey.js          ← ücretsiz kota banner'ı
+            ├── profileMenu.js        ← avatar/dropdown, tema, çıkış
+            ├── theme.js              ← açık/koyu tema
+            └── utils.js              ← escapeHtml, tarih/saat formatlama
 ```
 
 **Önemli:** Aynı isimli dosyalar farklı klasörlerde olabilir (şu an
@@ -77,9 +80,9 @@ tahmin etmemeli.
 - `docs/` — Statik frontend. Sadece Supabase'e (anon key + RLS
   üzerinden) ve tarayıcı API'lerine (localStorage tema) konuşur. Hiçbir
   zaman service_role key veya serper.dev key'i (paylaşımlı olan) içermez.
-- `docs/js/state.js` — Modüller arası paylaşılan TEK mutable state
+- `docs/public/js/state.js` — Modüller arası paylaşılan TEK mutable state
   objesi. Başka hiçbir global state mekanizması kullanılmaz.
-- `docs/js/supabaseClient.js` — Supabase client'ın tek oluşturulduğu
+- `docs/public/js/supabaseClient.js` — Supabase client'ın tek oluşturulduğu
   yer; diğer modüller `sb`'yi buradan import eder.
 - Kök dizindeki Python dosyaları (`scan.py`, `serper_client.py`,
   `compare_engine.py`) — Tarama, karşılaştırma ve iş mantığının tamamı

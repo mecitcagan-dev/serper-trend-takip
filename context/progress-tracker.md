@@ -4,15 +4,11 @@
 
 Devam ediyor — çekirdek ürün (auth, kullanıcı izolasyonu, kişisel/
 paylaşımlı Serper key, activity akışı) tamamlandı ve production'da
-çalışıyor. Şu an odak: **kod eklemeden proje dokümantasyonunu/context
-sistemini kurmak** (bu oturum).
+çalışıyor. Vercel deploy hatası bug fix'i bu oturumda tamamlandı.
 
 ## Şu Anki Hedef
 
-Farklı yapay zeka asistanları arasında geçiş yaparken bağlam kaybını
-önlemek için `CLAUDE.md` + `context/*.md` altı dosyalık sistemi,
-gerçek proje durumunu yansıtacak şekilde doldurmak. Bu oturumda kodda
-HİÇBİR değişiklik yapılmadı.
+Yok — bir sonraki görev başlayana kadar boş.
 
 ## Tamamlanan
 
@@ -26,7 +22,15 @@ HİÇBİR değişiklik yapılmadı.
   kelime listesi + kendi tarama sıklığı ile taranıyor)
 - Kişiye özel Serper API key + ortak/paylaşımlı deneme key (kişi başı
   10 tarama, server-side sayaç + trigger korumalı)
-- `context/` dokümantasyon sistemi (bu oturum)
+- `context/` dokümantasyon sistemi
+- **Vercel deploy fix (bu oturum):** "No Output Directory named 'public'
+  found" hatası — kök neden, `docs/vercel.json`'da `outputDirectory`
+  tanımsızken statik dosyaların `docs/` kökünde (bir `public/` alt
+  klasörü olmadan) durmasıydı. Çözüm: `docs/index.html`, `style.css`,
+  `js/` → `docs/public/` altına taşındı; `generate-config.js` artık
+  `config.js`'i `docs/public/config.js` olarak üretiyor; `.gitignore`
+  buna göre güncellendi. `vercel.json` değişmedi (Vercel'in varsayılan
+  `public` output arayışı artık gerçek konumla örtüşüyor).
 
 ## Devam Eden
 
@@ -61,7 +65,7 @@ HİÇBİR değişiklik yapılmadı.
 - **Server-side kota uygulaması**: Paylaşımlı Serper key kotası sadece
   `scan.py`'de (service_role ile) sayılıyor, frontend sadece
   gösteriyor — kullanıcı tarayıcıdan kotasını manipüle edemesin diye.
-- **Build-time config üretimi**: `docs/config.js` commit edilmiyor,
+- **Build-time config üretimi**: `docs/public/config.js` commit edilmiyor,
   her build'de `.env`/Vercel env vars'tan üretiliyor — secret
   sızıntısı riskini azaltmak ve tek bir doğruluk kaynağı (Vercel env
   vars) olmasını sağlamak için.

@@ -61,6 +61,6 @@ const SUPABASE_URL = ${JSON.stringify(SUPABASE_URL)};
 const SUPABASE_ANON_KEY = ${JSON.stringify(SUPABASE_ANON_KEY)};
 `;
 
-const outPath = path.join(__dirname, '..', 'config.js');
+const outPath = path.join(__dirname, '..', 'public', 'config.js');
 fs.writeFileSync(outPath, output);
 console.log(`✓ config.js üretildi: ${outPath}`);

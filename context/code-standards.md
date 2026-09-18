@@ -2,7 +2,7 @@
 
 ## Genel
 
-- Modüller küçük ve tek sorumluluklu tutulur — her `docs/js/*.js`
+- Modüller küçük ve tek sorumluluklu tutulur — her `docs/public/js/*.js`
   dosyası tek bir UI alanını (feed, auth, settings vb.) yönetir.
 - Kök nedeni düzelt, üstüne geçici çözüm (workaround) katman katman
   eklenmez.
@@ -69,12 +69,14 @@
 
 ## Dosya Organizasyonu
 
-- `docs/` — statik frontend (HTML/CSS/JS), Vercel'in servis ettiği
-  kök dizin.
-- `docs/js/` — tüm ES module dosyaları (`main.js` giriş noktası,
+- `docs/` — Vercel Root Directory; `package.json` ve `scripts/` burada,
+  servis edilen statik dosyalar `public/` altında.
+- `docs/public/` — statik frontend (HTML/CSS/JS), Vercel'in Output
+  Directory olarak servis ettiği klasör.
+- `docs/public/js/` — tüm ES module dosyaları (`main.js` giriş noktası,
   geri kalanı özellik bazlı modüller).
 - `docs/scripts/` — build zamanı çalışan Node script'leri
-  (`generate-config.js`).
+  (`generate-config.js`), `docs/public/config.js`'i üretir.
 - Kök dizin — Python otomasyonu (`scan.py`, `serper_client.py`,
   `compare_engine.py`), şema (`schema.sql`), proje dokümantasyonu
   (`README.md`, `plan.md`) ve `context/` klasörü.
