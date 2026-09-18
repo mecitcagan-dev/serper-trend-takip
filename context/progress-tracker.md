@@ -3,159 +3,297 @@
 ## Şu Anki Faz
 
 Devam ediyor — çekirdek ürün (auth, kullanıcı izolasyonu, kişisel/
-paylaşımlı Serper key, activity akışı) tamamlandı ve production'da
-çalışıyor. Vercel deploy hatası bug fix'i bu oturumda tamamlandı.
+paylaşımlı Serper key, activity akışı, otomatik profil oluşturma,
+Realtime canlı güncelleme) tamamlandı ve production'da çalışıyor.
+
+Önceki oturumda araştırmaya dayalı bir özellik/hata-düzeltme yol
+haritası PLANLANDI (bkz. "Şu Anki Hedef"). Kullanıcı Açık Sorular'ı
+cevapladı ve önceliklendirmeyi ("sen belirle") AI'ye bıraktı; İş 8
+(email bildirimi) tamamen iptal edildi (ücretsiz bir yolu olmadığı
+anlaşıldı — bkz. Açık Soru 7).
+
+Bu oturumdan itibaren "İki Aşamalı Çalışma" kuralına göre tek-madde
+ilerleme moduna geçildi: her turda tek bir onaylı plan maddesi
+uygulanıyor. Belirlenen öncelik sırası: **İş 4a (bu oturumda
+tamamlandı) → İş 3 → İş 6 → İş 7 → (opsiyonel/şartlı) İş 5.**
 
 ## Şu Anki Hedef
 
-Kullanıcının bildirdiği 5 iş üzerinden plan. Her madde için kod
-DEĞİŞTİRİLMEDİ — sadece bu bölüm yazıldı, onay bekleniyor.
+> Bu bölümdeki HİÇBİR madde için kod değiştirilmedi, sadece bu dosya
+> yazıldı. `ai-workflow-rules.md`'deki "İki Aşamalı Çalışma" kuralına
+> göre onay bekleniyor.
+
+Önceki oturumun hedefi olan İş 1 ve İş 2, kod tabanında (schema.sql
+v4/v5, auth.js, feed.js) tamamlanmış bulundu ve bu oturumda
+"Tamamlanan"a taşındı (bkz. Oturum Notları — bu bir dokümantasyon
+senkron hatasıydı, düzeltildi).
+
+Aşağıdaki maddeler öncelik sırasına göre listelendi. Her biri
+`ai-workflow-rules.md`'nin kapsam kuralına uygun olarak bağımsız,
+uçtan uca doğrulanabilir bir birim olacak şekilde küçük tutuldu; şema
+değişikliği gerektiren maddeler, tüketen koddan ayrı adımlara
+bölündü.
 
 ---
 
-### İş 1 — İkinci kullanıcıya tarama sonucu gelmiyor
+### İş 3 — 🐞 Hata: Ayarlanan tarama sıklığına (test: 10 dk) rağmen activity gelmiyor
 
-**Teşhis:** `profiles` satırı SADECE `settingsModal.js`'teki
-`saveSettings()` çalıştığında (kullanıcı Ayarlar modalını açıp
-Kaydet'e bastığında) `upsert` ile oluşuyor — kayıt/girişte otomatik
-bir satır oluşmuyor (`schema.sql`'de böyle bir trigger yok).
-`scan.py`'deki `get_all_profiles()` ise taranacak kullanıcı listesini
-BAŞTAN `profiles` tablosundan çekiyor. Yani Ayarlar modalını hiç
-açıp kaydetmemiş bir kullanıcının `profiles` satırı yok → `scan.py`
-o kullanıcıyı hiç görmüyor, kelimeleri olsa bile atlanıyor. Muhtemel
-kök neden bu.
+**Teşhis:** Kod tarafında `scan.py`'nin mantığı doğru görünüyor
+(`get_user_last_run_time` + `interval_minutes` karşılaştırması,
+`scan_for_user` içinde). Ama üç ayrı yerde birbiriyle ÇELİŞEN bir
+tarama sıklığı iddiası var:
 
-**Plan Maddesi 1:** `schema.sql`'e, `auth.users`'a her yeni kayıtta
-otomatik `profiles` satırı (id + email) açan bir trigger eklenecek,
-ayrıca var olan (satırsız) kullanıcılar için tek seferlik bir
-backfill INSERT'i eklenecek.
+- `context/architecture.md`: "GitHub Actions cron'u her **10
+  dakikada** bir tetiklenir" diyor.
+- `.github/workflows/scan.yml`'deki yorum: "Her **6 saatte** bir"
+  diyor.
+- `.github/workflows/scan.yml`'deki gerçek `cron` değeri: `*/5 * * * *`
+  → yani fiilen her **5 dakikada** bir.
 
-- Etkilenen dosya: `schema.sql` (**⚠️ korumalı dosya** —
-  `ai-workflow-rules.md` gereği açıkça onay istiyorum)
-- Dikkat: `code-standards.md` — Python/SQL tarafında `user_id`
-  filtresi zaten korunuyor, bu değişmiyor. RLS policy'leri
-  DEĞİŞMİYOR, sadece yeni bir trigger + `profiles.email` kolonu
-  ekleniyor.
-- Bu değişiklik İş 5 (email bildirimi) için de gerekli altyapıyı
-  hazırlıyor (aşağıya bakınız) — iki iş aynı schema adımını paylaşıyor.
-- `ai-workflow-rules.md` — "Şema değişikliği + tüketen kod" kuralı:
-  ÖNCE bu migration Supabase'de çalıştırılıp doğrulanacak, SONRA
-  (gerekirse) tüketen kod güncellenecek. `scan.py`'de bu iş için ekstra
-  kod değişikliği GEREKMİYOR — trigger sayesinde her kullanıcının zaten
-  `profiles` satırı olacağından mevcut `get_all_profiles()` mantığı
-  aynen çalışacak.
+Bu üçü aynı anda doğru olamaz — bu tek başına bir dokümantasyon/kod
+tutarsızlığı ve düzeltilmeli.
 
----
+Bunun ötesinde, "10 dakika ayarladım ama hiçbir şey gelmedi" şikâyeti
+için en olası açıklama GitHub Actions'ın `schedule` tetikleyicisinin
+doğası: GitHub bunu resmi olarak **"best effort", garanti değil**
+olarak tanımlıyor — yoğun saatlerde (özellikle her saatin başında)
+5-30 dakika hatta daha uzun gecikmeler yaygın olarak bildiriliyor,
+minimum desteklenen aralık 5 dakika, ve **yeni/az aktiviteli repolar
+kuyruğa en düşük öncelikle giriyor** (bazı vakalarda saatlerce
+gecikme). Ayrıca 60 gün commit'siz kalan repolarda scheduled
+workflow'lar sessizce devre dışı kalıyor (şu an bizim için risk değil
+ama not edilmeye değer).
 
-### İş 2 — Tarama sonucu F5 atmadan otomatik görünmeli
+**Plan Maddesi 3a — ✅ TAMAMLANDI (bkz. Tamamlanan bölümü).**
 
-**Teşhis:** Şu an `loadRuns()` sadece uygulama ilk açıldığında
-(`state.appInitialized`) ve manuel "Yenile" butonuna basıldığında
-çağrılıyor. Otomatik yenileme/canlı güncelleme mekanizması yok.
+**Plan Maddesi 3b — Kullanıcı tarafında doğrulama (kod değişikliği
+değil, bir eylem):** Kullanıcının GitHub reponun **Actions** sekmesine
+girip "Serper Trend Taramasi" workflow'unun son çalışma zamanlarını ve
+loglarını kontrol etmesi gerekiyor — bu, gecikme mi yoksa gerçek bir
+hata mı (secret eksik, kelime listesi boş, kota bitmiş vb.) olduğunu
+kesin olarak ayıracak tek yol. Ben (AI) bu repoya/Actions loglarına
+erişemediğimden bunu tahminden öteye taşıyamıyorum.
 
-**Plan Maddesi 2a:** `schema.sql`'e `runs` tablosunu Supabase Realtime
-publication'ına ekleyen satır eklenecek (`alter publication
-supabase_realtime add table runs;`), Supabase'de çalıştırılıp
-doğrulanacak.
-
-- Etkilenen dosya: `schema.sql` (**⚠️ korumalı dosya**)
-- Yeni bağımlılık YOK — Realtime, zaten kullanılan `@supabase/supabase-js`
-  içinde geliyor (`code-standards.md`'deki "gerçekten gerekli mi"
-  ilkesine uygun).
-
-**Plan Maddesi 2b (2a doğrulandıktan SONRA):** `docs/public/js/feed.js`'e
-Supabase Realtime `postgres_changes` aboneliği eklenecek — giriş yapan
-kullanıcının `runs` tablosuna yeni bir satır INSERT edildiğinde feed
-otomatik yenilenecek (F5/manuel yenile gerekmeden), Gmail'deki gibi.
-
-- Etkilenen dosya: `docs/public/js/feed.js`
-- Dikkat: `code-standards.md` — modül kendi `init()` içinde bağlanacak,
-  `main.js`'e ekstra mantık eklenmeyecek; Supabase çağrıları için
-  mevcut hata yönetimi deseni korunacak.
-- `ai-workflow-rules.md` bölme kuralı gereği 2a'dan (şema) SONRA, ayrı
-  bir adım olarak uygulanacak.
+- İlişkili: İş 6 (sistem durumu göstergesi), bu tür durumları bir
+  dahaki sefere arayüzden görünür kılacak.
 
 ---
 
-### İş 3 — UI iyileştirmeleri
+### İş 4 — 🐞 Hata: "Sıralama" ve "Yeni Trend" sekmeleri hep boş kalıyor
 
-**Teşhis — somut olarak tespit ettiklerim:**
+**Teşhis:** `compare_engine.py`'deki `determine_event_type()`, bir
+run'daki TÜM kelimelerin değişikliklerine bakıp tek bir "kazanan" tip
+seçiyor (öncelik sırası: `yeni_rakip` > `siralama_degisti` >
+`yeni_trend`). `runs.event_type` kolonu run başına TEK bir etiket
+tutuyor ve `docs/public/js/feed.js`'deki `renderFeed()` filtresi de
+SADECE bu tek etikete bakıyor:
 
-- Ekran görüntüsündeki çirkin "NEW" rozeti aslında bir emoji: `feed.js`
-  içindeki `EVENT_META.yeni_rakip.icon = '🆕'` (macOS bunu köşeli "NEW"
-  ikonu olarak render ediyor). Bu zaten `ui-context.md`'nin ikon
-  kuralına ("kütüphane yok, tüm ikonlar elle yazılmış inline SVG,
-  stroke tabanlı") aykırı — emoji kullanılmamalıydı.
-- Sağ üstteki profil avatarı (`profile-wrap`) CSS'te `position: fixed;
-top: 14px` — bu yüzden `header-actions` içindeki diğer 3 ikon
-  butonuyla (Yenile/Ayarlar/Kelime Düzenle, ki onlar normal flex akışında
-  `padding: 20px 18px 8px` içinde) aynı dikey hizada durmuyor. "Bazıları
-  ortalı bazıları değil" dediğin şey muhtemelen bu.
+```
+state.allRuns.filter((r) => r.event_type === state.currentFilter)
+```
 
-**Plan Maddesi 3a:** `EVENT_META`'daki 4 emoji ikon (🆕 📈 💬 🔍),
-`ui-context.md`'nin ikon konvansiyonuna uygun elle yazılmış inline SVG
-ile değiştirilecek (stroke tabanlı, `--ev-*` renk token'larını
-`currentColor` üzerinden kullanan).
+Sonuç: bir run'da 5 kelime taransa ve 1 kelimede yeni rakip, başka bir
+kelimede sıralama değişimi çıksa, run'un `event_type`'ı "yeni_rakip"
+olarak kaydediliyor ve o run **sadece** "Yeni Rakip" sekmesinde
+görünüyor — sıralama değişimi verisi `runs.details` (jsonb) içinde
+GERÇEKTEN saklanmış olsa da "Sıralama" sekmesinde hiç görünmüyor.
+`yeni_rakip`, `siralama_degisti`'den ve o da `yeni_trend`'den daha sık
+tetiklendiği için (bkz. İş 5), bu iki sekme pratikte hep boş kalıyor.
+Bu veri kaybı değil, sadece bir GÖRÜNÜRLÜK/filtreleme sorunu — veri
+zaten `details` içinde duruyor.
 
-- Etkilenen dosyalar: `docs/public/js/feed.js` (ikon tanımları),
-  `docs/public/style.css` (gerekirse `.feed-card-icon svg` boyutu)
-- Dikkat: `ui-context.md` — mevcut ikon stili (ince stroke, 1.4–1.6
-  stroke-width, 18–20 viewBox) korunacak; renkler asla hardcode
-  edilmeyecek, `--ev-*` token'ları kullanılacak.
+**Plan Maddesi 4a — ✅ TAMAMLANDI (bkz. Tamamlanan bölümü).**
 
-**Plan Maddesi 3b:** `.profile-wrap`'in `header-actions` içindeki diğer
-ikon butonlarla dikey hizası düzeltilecek.
-
-- Etkilenen dosya: `docs/public/style.css`
-- Dikkat: `ui-context.md`'deki "Profil menüsü" layout deseni
-  (`position: fixed` ile sağ üstte sabit) korunacak, sadece hizalama
-  değeri düzeltilecek — layout deseninin kendisi değişmiyor.
-
-**Açık Soru (aşağıda detaylı):** "Tamamen detaylı UI fix" ifadesi
-3a/3b'nin ötesinde çok geniş — bkz. Açık Sorular.
+**Plan Maddesi 4b (opsiyonel, 4a tamamlandıktan SONRA uygulanabilir,
+AYRI adım — henüz başlanmadı):** Kartın kendisinde birden fazla etiket
+gösterme (örn. "Yeni Rakip + Sıralama Değişimi" ikili rozet). Bu
+`ui-context.md`'de tanımlı `feed-card-icon`'un tek renk/tek ikon
+varsayımını değiştiren bir tasarım kararı gerektiriyor. Açık Soru 3'e
+kullanıcı "sen en mantıklısını seç" dedi — yani tasarım kararı AI'ye
+bırakıldı, ama bu henüz bir sonraki tek-madde turunda ele alınmadı;
+şimdilik uygulamaya alınmadı.
 
 ---
 
-### İş 4 — Karşılaştırma algoritması nasıl çalışıyor / boş sekmeler
+### İş 5 — (opsiyonel) Sınırdaki gürültülü "yeni rakip" false-positive'lerini azaltma
 
-Bu iş bir kod değişikliği değil, bir açıklama isteği — cevabı sohbette
-ayrıca verildi (bkz. bu oturumun ana yanıtı). Plan maddesi YOK. "Ne
-girilirse girilsin güzel sonuç versin" kısmı belirsiz — bkz. Açık
-Sorular.
+**Teşhis/gözlem:** `compare_engine.py`'de `TOP_N = 10` sınırında,
+Google SERP'lerinin doğal oynaklığı (aynı sorgu kısa aralıklarla
+tekrar atıldığında 10./11. sıradaki domainlerin yer değiştirmesi gibi)
+kolayca "yeni rakip" olarak işaretlenebiliyor — bu, izleme/uyarı
+araçları literatüründeki klasik "alert fatigue" (uyarı yorgunluğu)
+paternine tam uyuyor: anlamsız/gürültülü uyarılar kullanıcının gerçek
+sinyale güvenini azaltıyor. Bu aynı zamanda İş 4'te "yeni_rakip"in
+diğer kategorileri neden bu kadar sık bastırdığını da açıklıyor
+olabilir.
+
+**Plan Maddesi 5 (backend, İş 4'ten TAMAMEN ayrı bir adım):**
+`compare_engine.py`'de bir domainin "yeni rakip" sayılması için sadece
+son taramada değil, üst üste 2 taramada da mevcut/yok olması şartı
+eklenebilir ("doğrulanmış değişiklik" — 1 taramalık dalgalanmayı
+gürültü sayıp bildirmeme). Bunun için `scan.py`'de şu an sadece EN SON
+1 snapshot çekilen `get_last_snapshot`'ın, 2 önceki snapshot'ı da
+çekecek şekilde genişletilmesi gerekir.
+
+- Etkilenen dosyalar: `compare_engine.py`, `scan.py`
+- Dikkat: `code-standards.md` (Python) — type hints, `user_id`
+  filtresi her sorguda korunacak.
+- **Bu madde tamamen opsiyonel ve bir tasarım tercihi** — gerçek küçük
+  rekabet hareketlerini de gizleme riski var. Kullanıcı onayı/kararı
+  gerekiyor, bkz. Açık Sorular.
 
 ---
 
-### İş 5 — Otomasyon tamamlanınca email bildirimi
+### İş 6 — Sistem durumu göstergesi: son tarama / sıradaki tarama
 
-`plan.md`'deki "Sırada" madde 5-6 ile örtüşüyor ama tetikleme koşulu
-ve opt-in akışı netleşmeden kod yazılamaz — bkz. Açık Sorular. İş 1'de
-eklenecek `profiles.email` kolonu, karar verildiğinde bu iş için de
-altyapı sağlayacak (`scan.py`'nin service_role ile `auth.users`
-şemasına doğrudan postgrest erişimi yok, bu yüzden email'in
-`profiles`'ta denormalize tutulması gerekiyor).
+**Gerekçe:** Hem İş 3'ün teşhisini kolaylaştırmak hem de genel
+kullanıcı yararı için — kullanıcı şu an "tarama gerçekten çalışıyor
+mu, ne zaman çalıştı, sıradaki ne zaman?" sorusuna arayüzden hiç
+cevap bulamıyor.
 
-## Tamamlanan
+**Plan Maddesi 6a:** `state.allRuns[0].run_time` (zaten `loadRuns()`
+ile çekiliyor, EK SORGU GEREKMİYOR) ve kullanıcının ayarlar
+modalındaki interval değeri kullanılarak "Son tarama: X önce" +
+"Sıradaki tarama: ~X sonra (tahmini)" bilgisi feed başlığına veya
+ayarlar modalına eklenecek.
 
-- Dil tutarlılığı: tüm görünür arayüz metinleri Türkçe
-- Supabase Auth: email/şifre + Google OAuth, email doğrulama akışı,
-  Türkçe hata mesajları
-- Kullanıcı bazlı veri izolasyonu: `keywords`/`runs`/
-  `keyword_snapshots`/`settings` tablolarına `user_id` + RLS
-  policy'leri
-- `scan.py`'nin çok kullanıcılı hale getirilmesi (her kullanıcı kendi
-  kelime listesi + kendi tarama sıklığı ile taranıyor)
-- Kişiye özel Serper API key + ortak/paylaşımlı deneme key (kişi başı
-  10 tarama, server-side sayaç + trigger korumalı)
-- `context/` dokümantasyon sistemi
-- **Vercel deploy fix (bu oturum):** "No Output Directory named 'public'
-  found" hatası — kök neden, `docs/vercel.json`'da `outputDirectory`
-  tanımsızken statik dosyaların `docs/` kökünde (bir `public/` alt
-  klasörü olmadan) durmasıydı. Çözüm: `docs/index.html`, `style.css`,
-  `js/` → `docs/public/` altına taşındı; `generate-config.js` artık
-  `config.js`'i `docs/public/config.js` olarak üretiyor; `.gitignore`
-  buna göre güncellendi. `vercel.json` değişmedi (Vercel'in varsayılan
-  `public` output arayışı artık gerçek konumla örtüşüyor).
-  Ayarlar modalı varsayılan tarama sıklığı gösterimi düzeltildi: settings satırı olmayan kullanıcılar için dropdown artık scan.py'deki gerçek fallback değeri olan 360 dk ("6 saat") gösteriyor; önceden HTML'deki ilk <option>'a (0 dk, "her tetiklemede") düşüyordu — kullanıcıyı yanıltıp yanlışlıkla paylaşımlı key kotasını hızla tüketmesine yol açabilirdi (settingsModal.js).
+- Etkilenen dosyalar: `docs/public/js/feed.js` (veya küçük bir yeni
+  modül), `docs/index.html` (küçük bir UI elemanı),
+  `docs/public/style.css` (mevcut `:root` token'ları ile)
+- Dikkat: `code-standards.md` — renk hardcode edilmeyecek; gösterilen
+  metin "tahmini" olarak işaretlenecek (GitHub Actions gecikmesi
+  yüzünden gerçek zamanı garanti edemiyoruz — bkz. İş 3).
+
+**Plan Maddesi 6b (opsiyonel, şema+backend gerektirir, AYRI adım):**
+`scan.py`'nin taramayı ATLADIĞI durumlar (aktif kelime yok, kota
+bitti, sıklık dolmadı) şu an sadece GitHub Actions loglarına yazılıyor,
+kullanıcı göremiyor. Bunu arayüzde göstermek için `runs` tablosuna
+(veya `runs.details`'e) bir "atlanma nedeni" alanı eklemek gerekir —
+bu bir şema kararı, bkz. Açık Sorular.
+
+---
+
+### İş 7 — Kendi alan adını (hedef domain) işaretleyip özel takip etme
+
+**Gerekçe (araştırma):** İncelenen rakip araçların hemen hepsinde
+(rank tracker'lar) en temel özellik "hangi domain SİZİN" bilgisini
+tutup, ona özel "Competitor Outranks" tipi bir uyarı üretmek. Şu anki
+uygulama ise sadece genel top-10 domain setindeki değişiklikleri
+görüyor, "benim sitem" diye bir kavramı hiç bilmiyor — kullanıcı için
+en kritik bilgi ("kendi sıralamam yükseldi mi düştü mü") şu an hiçbir
+yerde açıkça gösterilmiyor.
+
+**Plan Maddesi 7 (şema ÖNCE, korumalı dosya — açık onay istiyorum):**
+`keywords` tablosuna opsiyonel bir `target_domain` kolonu eklenecek.
+Şema doğrulandıktan SONRA:
+
+- `compare_engine.py`: `target_domain` girilmişse, o domainin
+  `new_organic`/`old_organic` içindeki pozisyonunu ayrıca hesaplayıp
+  `own_position`, `own_position_change` gibi alanlar döndürecek.
+- `docs/public/js/keywordsModal.js`: kelime satırına opsiyonel bir
+  "kendi siten (opsiyonel)" input alanı eklenecek.
+- `docs/public/js/feed.js` (detay render): kendi domain bilgisi varsa
+  öne çıkan bir şekilde gösterilecek (örn. "🔺 Senin sitenin pozisyonu:
+  4 → 7").
+
+- Etkilenen dosyalar: `schema.sql` (⚠️ korumalı), `compare_engine.py`,
+  `keywordsModal.js`, `feed.js`
+- Dikkat: `ai-workflow-rules.md` — "şema değişikliği + tüketen kod"
+  bölme kuralı: önce şema Supabase'de doğrulanacak, SONRA
+  `compare_engine.py`, SONRA frontend, sırayla ve ayrı ayrı.
+- **Bu, bu oturumun önerdiği en büyük/en yeni özellik** — tasarım
+  kararı gerektiriyor, bkz. Açık Sorular.
+
+---
+
+### İş 8 — Email bildirim sistemi (plan.md madde 5-6'nın uygulanması)
+
+**Gerekçe:** Bu zaten `plan.md`'de (madde 5-6) ve
+`progress-tracker.md`'nin eski "Sırada" bölümünde tanımlı, henüz
+başlanmamış bir hedefti. Kullanıcının "otomasyon" vurgusuna en çok
+uyan, en somut kazanç sağlayacak madde bu — bu yüzden "Sırada"dan
+çıkarıp "Şu Anki Hedef"e alıyorum.
+
+**Plan Maddesi 8a (şema, korumalı dosya — açık onay istiyorum):**
+`profiles` tablosuna bir `email_notifications_enabled boolean default
+false` kolonu eklenecek. `profiles.email` zaten (v4 trigger'ı
+sayesinde) mevcut olduğundan, `plan.md`'nin "Connect to Mail" fikri
+BASİTLEŞİYOR — ayrı bir email toplama adımı gerekmiyor, sadece
+açma/kapama anahtarı yeterli. Not: bu kolon `shared_key_scans_used`
+gibi korumaya (trigger'a) gerek duymuyor — kullanıcı kendi bildirim
+tercihini istediği gibi değiştirebilmeli, mevcut
+`users_own_profile_update` politikası bunun için yeterli.
+
+**Plan Maddesi 8b (backend, 8a doğrulandıktan SONRA, ayrı adım):**
+`scan.py`, bir kullanıcının taraması `event_type != 'degisiklik_yok'`
+VE `email_notifications_enabled = true` ile bittiyse Resend REST
+API'sine (ekstra SDK değil, `requests` ile — minimal bağımlılık
+ilkesi) bir özet mail gönderecek.
+
+- Yeni secret: `RESEND_API_KEY` → GitHub Secrets'a eklenmesi
+  gerekiyor, `README.md` güncellenecek.
+- Dikkat: `architecture.md` invariant 1 ile aynı mantık —
+  `RESEND_API_KEY` asla `docs/` altına yazılmaz, sadece GH Actions
+  ortamında kalır.
+- Not: Resend'in ücretsiz katmanı ayda 3.000 / günde 100 email ile
+  sınırlı — bu ölçekteki kişisel/küçük ekip kullanımı için fazlasıyla
+  yeterli, "tamamen ücretsiz katman" ilkesi bozulmuyor. Ayrıca
+  sistem zaten sadece "değişiklik var" run'larında mail atacağı için
+  (routine "değişiklik yok" taramalarında mail YOK), günlük 100 sınırı
+  pratikte hiç zorlanmayacak.
+
+**Plan Maddesi 8c (frontend, 8b'den SONRA, ayrı adım):**
+`settingsModal.js`'e bir bildirim toggle'ı (checkbox) eklenecek,
+`saveSettings()` bu değeri `profiles.email_notifications_enabled`'a
+yazacak.
+
+- **Görsel tercih Açık Soru'ya bağlı** — `plan.md`'deki "kırmızı-beyaz
+  Gmail temalı buton" fikri mi, yoksa sade bir Ayarlar toggle'ı mı?
+
+---
+
+## Açık Sorular
+
+1. **(İş 3)** Tarama sıklığı üç yerde farklı yazıyor: `scan.yml`
+   yorumu "6 saat", `architecture.md` "10 dakika", gerçek `cron` değeri
+   "5 dakika". Hangisi doğru/istenen production değeri? Onu tek
+   doğruluk kaynağı yapıp diğer ikisini ona göre düzelteceğim.
+   Cevap> Production degeri olarak 1 saat yapalim fakat kisi ayarlayabilsin yine. Test icin yine 1dk 5dk gibi degerler kalsin sonrasinda onlar kaldirilacak.
+2. **(İş 3)** GitHub reponun **Actions** sekmesine girip "Serper Trend
+   Taramasi" workflow'unun son çalışma geçmişini/loglarını
+   kontrol edebilir misin? Gecikme mi (GitHub'ın "best effort"
+   zamanlaması) yoksa gerçek bir hata mı (secret, boş kelime listesi,
+   kota) olduğunu bu şekilde kesinleştirebiliriz.
+   Cevap> Is 3u yapacagimiz zaman bunu benden iste sana yollayayim.
+3. **(İş 4 / 4b)** Bir run'ın feed kartında birden fazla değişiklik
+   tipini aynı anda göstermek (örn. iki rozet) ister misin, yoksa 4a
+   (sadece sekme filtresini düzeltme) şimdilik yeterli mi?
+   Bunu sen en mantiklisini sec bilmiyorum
+4. **(İş 5)** "Sınırdaki gürültülü yeni rakip" false-positive'lerini
+   azaltmak için 2-taramalık doğrulama mantığı ister misin? Bu, bazı
+   küçük/gerçek rekabet hareketlerinin de 1 tur gecikmeli
+   bildirilmesi anlamına gelir — bu ödünleşmeyi kabul eder misin, yoksa
+   ham hassasiyet korunsun mu?
+   Eger ki gercekten dogru cevap vermekde problem cikartacaksa kabul ederim fakat su anda zaten guzel cevaplar aliyorsak gerek yok
+5. **(İş 6b)** Taramanın "atlandı" nedenini arayüzde göstermek
+   istiyor musun (şema değişikliği gerektiriyor), yoksa 6a (son/sıradaki
+   tarama zamanı) şimdilik yeterli mi?
+   Gosterelim
+6. **(İş 7)** `target_domain` her KELİME için mi ayrı ayrı girilecek
+   (ajans/çoklu müşteri senaryosu), yoksa profil bazında TEK bir
+   "benim sitem" alanı mı yeterli (tek kullanıcı, tek site senaryosu)?
+   Bu, şema tasarımını doğrudan etkiliyor.
+   Coklu musteri senaryosu olmasi lazim fakat bunu her kullanici degil isteyen kullanicilar kullanacak bunu aktif edilip deaktivite edilebilir seklinde yapacaksin sonucta tek musterimiz vayes degil.
+7. **(İş 8c)** Bildirim açma/kapama için `plan.md`'deki "kırmızı-beyaz
+   Gmail temalı buton" fikri mi, yoksa Ayarlar modalında sade bir
+   toggle mı?
+   Bildirim isi tamamen yok oldu bildirim yok. Bildirimi yapmamiz icin para gerekiyor. Ucretsiz bir yolu yokmus gmail notification olayinin
+8. **(genel öncelik)** Yukarıdaki maddelerden hangilerini bu sprintte,
+   hangilerini "Sırada"da bırakmamı istersin? (Önerim: önce İş 3/4 —
+   hata düzeltmeleri — sonra İş 6, sonra İş 8, İş 7 ve İş 5 en son.)
+   Sen belirle.
+
+---
 
 ## Devam Eden
 
@@ -163,60 +301,27 @@ altyapı sağlayacak (`scan.py`'nin service_role ile `auth.users`
 
 ## Sırada
 
-1. "Connect to Mail" butonu (sağ altta, Gmail temalı, tek tıkla
-   kullanıcının login email'ini "connect" olarak işaretleme)
-2. Email bildirim sistemi: yeni aktivite (`event_type !=
-'degisiklik_yok'`) tespit edildiğinde, mail'i connect etmiş
-   kullanıcıya Resend ile otomatik mail
-   - Gerekli: `profiles` tablosuna mail-connect durumu için kolon,
-     Resend API key GitHub Secrets'a eklenmeli, muhtemelen `scan.py`
-     içine (veya ayrı bir script'e) bildirim gönderme adımı
+Bu oturumda "Şu Anki Hedef"e taşınmayan, daha spekülatif/büyük
+kapsamlı fikirler — kullanıcı önceliklendirmesi olmadan başlanmayacak:
 
-## Açık Sorular
-
-**İş 3 — UI:**
-
-- "Tamamen detaylı bir UI fix" / "çok daha iyi bir hal alacak" çok
-  geniş kapsamlı bir istek. Somut olarak tespit edebildiğim iki şeyi
-  (3a: emoji ikonlar, 3b: profil avatarı hizası) plana ekledim. Bunun
-  ötesinde hangi ekran/eleman rahatsız edici? Elimde bir mockup/referans
-  yoksa geri kalanını tahmin edip büyük bir "yeniden tasarım" işine
-  girmek `ai-workflow-rules.md`'nin "büyük spekülatif değişikliklerden
-  kaçınılır" ilkesine aykırı olur. Somut örnekler (ekran görüntüsü +
-  ne rahatsız ediyor) verirsen onları da küçük doğrulanabilir adımlar
-  olarak plana eklerim.
-
-**İş 4 — Algoritma:**
-
-- "Ne girersek girelim yine aynı şekilde güzel bir sonuç versin"
-  ifadesi belirsiz — algoritmanın davranışında somut olarak ne
-  değişmesini istiyorsun? (Mevcut davranış: ilk taramada hiçbir zaman
-  "değişiklik" çıkmaz çünkü karşılaştırılacak önceki veri yok — bu
-  beklenen davranış, bug değil. "Sıralama"/"Yeni Trend" sekmelerinin
-  boş görünmesi de muhtemelen `determine_event_type()`'ın tüm run için
-  TEK bir event_type seçmesinden kaynaklanıyor — aynı run içinde hem
-  yeni rakip hem sıralama değişimi varsa run'a sadece "yeni_rakip"
-  etiketi veriliyor, "Sıralama" sekmesi o run'ı hiç göstermiyor. Bunu
-  değiştirmek [per-keyword event tipi gibi] veri modelinde büyük bir
-  değişiklik gerektirir — açıkça istemedikçe yapmıyorum.)
-
-**İş 5 — Email bildirimi:**
-
-- Email hangi adrese gidecek: sadece Supabase Auth login email'i mi
-  (otomatik, "Connect to Mail" butonuna gerek kalmaz), yoksa
-  `plan.md`'deki orijinal "Connect to Mail" opt-in butonu tasarımı
-  hâlâ isteniyor mu?
-- Her scan TAMAMLANDIĞINDA mı (event_type ne olursa olsun) yoksa
-  sadece anlamlı bir DEĞİŞİKLİK tespit edildiğinde mi (`event_type !=
-'degisiklik_yok'`, `plan.md`'nin orijinal tasarımı) mail atılsın?
-  Mesajın "otomasyonunuz tamamlandı" örneği ilkine işaret ediyor ama
-  bu, kullanıcı hiçbir değişiklik olmasa bile her 6 saatte bir (veya
-  seçtiği sıklıkta) mail alacağı anlamına gelir — istediğin bu mu?
-- Resend hesabın/API key'in hazır mı? Onaylanırsa GitHub Secrets'a
-  `RESEND_API_KEY` eklemen gerekecek (ben kodu yazarım, secret'ı
-  eklemek sana kalıyor).
-- Email bildirimi `scan.py` içine mi eklenecek yoksa ayrı bir
-  `notify.py` script'ine mi taşınacak? (Henüz karar verilmedi.)
+1. **Haftalık/günlük özet e-postası** — anlık uyarıya ek/alternatif
+   olarak, alert-fatigue azaltmak için yaygın bir pattern (araştırılan
+   rakip araçların çoğunda var). İş 8 çalışıp test edilmeden mantıklı
+   değil; kendi cron'unu (haftalık ayrı bir workflow) gerektirir.
+2. **Kelime bazlı pozisyon geçmişi / mini-grafik** — `keyword_snapshots`
+   zaten geçmişi tutuyor, ama bunu bir trend grafiğine çevirmek yeni
+   bir agregasyon sorgusu + inline SVG çizim gerektirir (harici
+   charting kütüphanesi YOK — `code-standards.md` minimal bağımlılık
+   ilkesi). İş 7 (kendi domain) ile birlikte düşünülürse çok daha
+   değerli olur.
+3. **Manuel "Şimdi Tara" butonu** — GitHub Actions'ı frontend'den
+   tetiklemek bir GitHub token'ının bir yerde (Vercel serverless
+   function veya üçüncü parti bir cron servisi) saklanmasını
+   gerektiriyor; bu, projenin "sunucu gerektirmeyen" mimari
+   ilkesini (`project-overview.md`) doğrudan etkileyen bir mimari
+   karar — `architecture.md`'nin güncellenmesini de gerektirir.
+   Açık onay/tartışma gerekiyor, bu yüzden şimdilik sadece not
+   edildi, plana alınmadı.
 
 ## Mimari Kararlar
 
@@ -239,14 +344,27 @@ altyapı sağlayacak (`scan.py`'nin service_role ile `auth.users`
 
 ## Oturum Notları
 
-- Bu oturumda: kullanıcı farklı yapay zeka asistanları arasında geçiş
-  yaparken bağlam kaybı yaşadığını belirtti, çözüm olarak `CLAUDE.md`
-  - `context/` altı dosyalık sistem kuruldu ve mevcut kod tabanından
-    gerçek bilgilerle dolduruldu.
-- Kullanıcı ayrıca mevcut dosya/klasör yapısının iyi olup olmadığını
-  sordu — değerlendirme: yapı zaten net (frontend `docs/`, otomasyon
-  kökte, şema `schema.sql`'de) ve tam bir "rework" GEREKMİYOR; tek
-  eklenen şey bu `context/` klasörü ve kök dizindeki `CLAUDE.md`.
+- **Dokümantasyon senkron hatası düzeltildi:** Önceki oturumun
+  hedefleri olan İş 1 (otomatik profil oluşturma trigger'ı) ve İş 2
+  (Realtime canlı güncelleme, 2a+2b) kod tabanında (`schema.sql`
+  v4/v5, `auth.js`, `feed.js`) FİİLEN tamamlanmış durumdaydı, ama bu
+  dosyanın "Tamamlanan" bölümü hiç güncellenmemişti —
+  `ai-workflow-rules.md`'nin "her anlamlı değişiklikten sonra
+  progress-tracker.md güncellenir" kuralı bir önceki oturumda
+  atlanmış. Bu oturumda düzeltildi.
+- **Bu oturumun talebi:** Kullanıcı, bu projenin kendisine verilmiş
+  bir otomasyon görevi olduğunu ve olabildiğince faydalı/iyi bir sonuç
+  çıkarmak istediğini belirtti; bu yüzden özellik önerileri
+  "sadece bildirilen hataları düzelt" ötesine geçecek şekilde,
+  araştırmaya dayalı ve kapsamlı tutuldu — ama şema değiştiren hiçbir
+  madde kullanıcı onayı olmadan uygulanmayacak (bkz. Açık Sorular).
+- **Araştırma yöntemi:** Benzer SEO rank tracker / SERP izleme
+  araçlarının (rakip alanı takibi, özet e-posta raporları,
+  yapılandırılabilir uyarı koşulları, "false positive" azaltma
+  pratikleri) ve GitHub Actions'ın zamanlanmış görev güvenilirliğine
+  dair genel davranışları web araştırmasıyla incelendi; bulgular
+  yukarıdaki maddelerin gerekçelerine yansıtıldı (kaynaklar sohbet
+  yanıtında paylaşıldı, bu dosyaya eklenmedi).
 - Bir sonraki oturuma başlarken: önce `CLAUDE.md`'yi, sonra sırasıyla
   `context/project-overview.md` → `architecture.md` → `ui-context.md`
   → `code-standards.md` → `ai-workflow-rules.md` →

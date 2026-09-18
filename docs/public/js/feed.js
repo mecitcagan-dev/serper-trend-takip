@@ -40,12 +40,32 @@ export async function loadRuns() {
 	renderFeed();
 }
 
+// Bir run'ın, verilen sekme filtresine ait değişiklik tipini İÇEREN en az
+// bir kelimesi var mı diye bakar. run.event_type sadece run'un "en öne
+// çıkan" TEK etiketini tutuyor (bkz. compare_engine.py
+// determine_event_type — öncelik: yeni_rakip > siralama_degisti >
+// yeni_trend), bu yüzden salt event_type'a göre filtrelemek aynı run
+// içindeki diğer kelimelerin değişikliklerini (details jsonb'de zaten
+// duran veriyi) sekmelerde görünmez kılıyordu — bu bir görünürlük
+// sorunuydu, veri kaybı değil.
+function runHasChangeType(run, filterType) {
+	const details = run.details || {};
+	return Object.values(details).some((d) => {
+		if (!d || d.error || d.first_run || !d.has_changes) return false;
+		if (filterType === 'yeni_rakip') return !!d.new_domains?.length;
+		if (filterType === 'siralama_degisti') return !!d.position_changes?.length;
+		if (filterType === 'yeni_trend')
+			return !!(d.new_paa?.length || d.new_related?.length);
+		return false;
+	});
+}
+
 export function renderFeed() {
 	const feedList = document.getElementById('feedList');
 	const filtered =
 		state.currentFilter === 'all'
 			? state.allRuns
-			: state.allRuns.filter((r) => r.event_type === state.currentFilter);
+			: state.allRuns.filter((r) => runHasChangeType(r, state.currentFilter));
 
 	feedList.innerHTML = '';
 

@@ -2,8 +2,11 @@ name: Serper Trend Taramasi
 
 on:
   schedule:
-    # Her 6 saatte bir: 00:00, 06:00, 12:00, 18:00 UTC
-    - cron: '*/5 * * * *'
+    # Production: her saat başı (00:00, 01:00, 02:00, ... UTC) tetiklenir.
+    # Bu sadece "kontrol" tetikleyicisi — gerçek tarama, kullanıcının
+    # Ayarlar'da seçtiği sıklık (scan_interval_minutes) henüz dolmadıysa
+    # scan.py tarafından atlanır.
+    - cron: '0 * * * *'
   workflow_dispatch: {} # "Run workflow" ile manuel de tetiklenebilir
 
 jobs:
