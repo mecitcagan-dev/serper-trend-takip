@@ -185,3 +185,69 @@ drop trigger if exists trg_protect_shared_key_scans_used on profiles;
 create trigger trg_protect_shared_key_scans_used
   before update on profiles
   for each row execute function protect_shared_key_scans_used();
+
+-- =============================================================
+-- v4: Kullanıcı kaydında otomatik profil oluşturma
+--     (progress-tracker.md — Şu Anki Hedef / İş 1)
+-- =============================================================
+
+-- profiles tablosuna email kolonu eklenir. auth.users şemasına scan.py'nin
+-- (service_role ile de olsa) doğrudan postgrest erişimi olmadığından, email
+-- burada denormalize tutulur (İş 5 — email bildirimi — için de gerekli).
+alter table profiles add column if not exists email text;
+
+-- auth.users'a her yeni kayıtta (email/şifre veya Google OAuth fark etmeksizin)
+-- otomatik olarak bir profiles satırı açar. settingsModal.js'teki mevcut
+-- upsert akışı DEĞİŞMEDİ — sadece artık kullanıcı Ayarlar'ı hiç açmasa bile
+-- profiles satırı zaten var olacak, bu yüzden scan.py'nin get_all_profiles()
+-- taraması onu atlamayacak.
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email)
+  values (new.id, new.email)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Tek seferlik backfill: trigger eklenmeden ÖNCE kayıt olmuş, henüz
+-- profiles satırı olmayan kullanıcılar için (bu migration'ın asıl amacı —
+-- "ikinci kullanıcıya tarama sonucu gelmiyor" sorununun kök nedeni).
+insert into public.profiles (id, email)
+select u.id, u.email
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null;
+
+-- =============================================================
+-- v5: runs tablosu için Realtime aboneliği
+--     (progress-tracker.md — Şu Anki Hedef / İş 2 / Plan Maddesi 2a)
+-- =============================================================
+
+-- feed.js'in F5 atmadan otomatik güncellenebilmesi için: giriş yapan
+-- kullanıcının runs tablosuna yeni bir satır INSERT edildiğinde
+-- Supabase Realtime bunu istemciye postgres_changes olarak yayınlar.
+-- Yeni bağımlılık yok — Realtime, zaten kullanılan @supabase/supabase-js
+-- CDN paketinin içinde geliyor.
+--
+-- IF NOT EXISTS burada yok çünkü ALTER PUBLICATION ... ADD TABLE bunu
+-- desteklemiyor; tablo zaten publication'daysa bu satır hata verir, bu
+-- yüzden önce var olup olmadığını kontrol edip yoksa ekleyen bir DO bloğu
+-- kullanıyoruz (script'in tekrar tekrar çalıştırılabilir kalması için).
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'runs'
+  ) then
+    alter publication supabase_realtime add table public.runs;
+  end if;
+end $$;

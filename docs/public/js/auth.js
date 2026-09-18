@@ -1,8 +1,8 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
-import { loadRuns } from './feed.js';
 import { checkSerperKey } from './serperKey.js';
 import { renderProfileAvatar } from './profileMenu.js';
+import { loadRuns, subscribeToRuns, unsubscribeFromRuns } from './feed.js';
 
 let authMode = 'login';
 let pendingVerifyEmail = '';
@@ -65,6 +65,7 @@ function showApp() {
 	document.getElementById('authGate').classList.add('hidden');
 	document.getElementById('appRoot').classList.remove('hidden');
 	renderProfileAvatar(state.currentUser);
+	subscribeToRuns(state.currentUser.id); // ← eklendi: F5'siz otomatik güncelleme
 	if (!state.appInitialized) {
 		state.appInitialized = true;
 		loadRuns();
@@ -262,7 +263,9 @@ export function init() {
 	document.querySelectorAll('.auth-tab').forEach((tab) => {
 		tab.addEventListener('click', () => setAuthMode(tab.dataset.mode));
 	});
-	document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
+	document
+		.getElementById('authForm')
+		.addEventListener('submit', handleAuthSubmit);
 	document
 		.getElementById('googleAuthBtn')
 		.addEventListener('click', handleGoogleAuth);
@@ -281,7 +284,9 @@ export function init() {
 		setAuthMode('login');
 		showAuthView('form');
 	});
-	document.getElementById('continueToAppBtn').addEventListener('click', showApp);
+	document
+		.getElementById('continueToAppBtn')
+		.addEventListener('click', showApp);
 
 	// ---------- Oturum kontrolü ----------
 	let handledInitialSession = false;
@@ -303,6 +308,7 @@ export function init() {
 			state.appInitialized = false;
 			state.allRuns = [];
 			state.selectedRunId = null;
+			unsubscribeFromRuns(); // ← eklendi: eski kanal/filtre temizlenir
 			showAuthGate();
 		}
 	});

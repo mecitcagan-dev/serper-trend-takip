@@ -1,7 +1,6 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { escapeHtml, dayLabel, timeLabel } from './utils.js';
-
 export const EVENT_META = {
 	yeni_rakip: { icon: '🆕', label: 'Yeni Rakip Tespit Edildi' },
 	siralama_degisti: { icon: '📈', label: 'Sıralama Değişimi' },
@@ -158,4 +157,45 @@ export function init() {
 			renderFeed();
 		});
 	});
+}
+
+// ---------- Realtime ----------
+
+let runsChannel = null;
+
+// Kullanıcı giriş yaptığında (veya oturum sayfa yenilenince geri
+// yüklendiğinde) auth.js tarafından çağrılır. runs tablosuna bu kullanıcı
+// için yeni bir satır INSERT edildiğinde feed'i otomatik yeniler
+// (F5/manuel yenile gerekmeden) — RLS zaten user_id = auth.uid() ile
+// sınırlı olduğundan filter burada sadece gereksiz event trafiğini
+// azaltmak için var, güvenlik RLS'ten geliyor.
+export function subscribeToRuns(userId) {
+	unsubscribeFromRuns();
+	runsChannel = sb
+		.channel(`runs-changes-${userId}`)
+		.on(
+			'postgres_changes',
+			{
+				event: 'INSERT',
+				schema: 'public',
+				table: 'runs',
+				filter: `user_id=eq.${userId}`,
+			},
+			() => {
+				// Yeni run geldi — mevcut loadRuns() akışı (hata yönetimi dahil)
+				// aynen kullanılarak feed baştan yüklenir.
+				loadRuns();
+			},
+		)
+		.subscribe();
+}
+
+// Çıkış yapıldığında abonelik kapatılır — bir sonraki giriş yapan kullanıcı
+// farklı bir user_id ile abone olacağından eski kanal (ve filtresi)
+// temizlenmeli, aksi halde kanal sızıntısı ve yanlış filtreyle dinleme olur.
+export function unsubscribeFromRuns() {
+	if (runsChannel) {
+		sb.removeChannel(runsChannel);
+		runsChannel = null;
+	}
 }
