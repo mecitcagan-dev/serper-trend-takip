@@ -122,7 +122,7 @@ karşılaştırılıyor. OAuth token'ı saklanmıyor. Canlı kabul için Google 
 ücretsiz OAuth web client oluşturulması, Search Console API'nin açılması ve
 `schema.sql` v9 migrationının çalıştırılması gerekiyor.
 
-### 7. GEO/AI görünürlük modülü
+### 7. GEO/AI görünürlük modülü — Ücretsiz kapsam hazır
 
 - Vayes'in GEO hizmetiyle uyumlu olarak AI arama görünürlüğü ayrı bir
   özellik olarak tanımlanacak.
@@ -135,6 +135,12 @@ karşılaştırılıyor. OAuth token'ı saklanmıyor. Canlı kabul için Google 
 
 **Tamamlanma ölçütü:** AI görünürlüğü ölçümünün neyi, hangi kaynakla ve
 hangi sıklıkta ölçtüğü kullanıcıya açıkça gösterilmeli.
+
+**Kontrol:** Proje bazlı GEO kontrol kaydı eklendi. Soru, kaynak, cevap özeti,
+marka görünürlüğü, rakipler, cited domainler, not ve kontrol tarihi tutuluyor;
+geçmiş kontroller tabloda listeleniyor. Ücretli AI API'si eklenmedi ve PAA/
+related verisi AI cevabı olarak etiketlenmedi. Bu ücretsiz sürüm manuel kanıt
+toplar; otomatik AI cevap taraması kapsam dışıdır.
 
 ### 8. Veri kalitesi, kota ve tarama maliyeti
 

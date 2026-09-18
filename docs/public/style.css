@@ -745,6 +745,21 @@ body {
 	outline: none;
 	border-color: var(--accent);
 }
+.geo-textarea {
+	min-height: 64px;
+	resize: vertical;
+}
+.geo-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+	font-size: 13px;
+	color: var(--text-primary);
+}
+.geo-checkbox input {
+	accent-color: var(--accent);
+}
 
 .quota-badge {
 	display: block;

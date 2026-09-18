@@ -174,6 +174,78 @@ alter table projects add column if not exists device text not null default 'desk
 -- OAuth access token tutulmaz; yalnızca kullanıcının seçtiği mülk adresi
 -- proje bağlamında saklanır. Token tarayıcı oturumu içinde geçici kalır.
 alter table projects add column if not exists gsc_site_url text;
+
+-- =============================================================
+-- v10: Ücretsiz GEO/AI görünürlük kanıt kayıtları
+-- =============================================================
+
+-- Ücretli bir AI API'sine otomatik istek atılmaz. Kullanıcı, ChatGPT/Gemini
+-- gibi izinli bir arayüzde yaptığı kontrolün kanıtını buraya kaydeder.
+create table if not exists geo_checks (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  project_id bigint not null references public.projects(id) on delete cascade,
+  prompt text not null,
+  source text not null default 'manual',
+  answer_excerpt text not null default '',
+  brand_mentioned boolean not null default false,
+  competitor_mentions text not null default '',
+  cited_domains text not null default '',
+  notes text not null default '',
+  checked_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+alter table geo_checks enable row level security;
+drop policy if exists "users_own_geo_checks_select" on geo_checks;
+drop policy if exists "users_own_geo_checks_insert" on geo_checks;
+drop policy if exists "users_own_geo_checks_update" on geo_checks;
+drop policy if exists "users_own_geo_checks_delete" on geo_checks;
+
+create policy "users_own_geo_checks_select" on geo_checks
+  for select to authenticated using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "users_own_geo_checks_insert" on geo_checks
+  for insert to authenticated with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "users_own_geo_checks_update" on geo_checks
+  for update to authenticated using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  ) with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "users_own_geo_checks_delete" on geo_checks
+  for delete to authenticated using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  );
+
+grant select, insert, update, delete on public.geo_checks to authenticated;
+grant select, insert, update, delete on public.geo_checks to service_role;
+grant usage on all sequences in schema public to service_role;
+create index if not exists idx_geo_checks_project_checked_at
+  on public.geo_checks(project_id, checked_at desc);
 grant select, insert, update, delete on public.settings to service_role;
 grant usage on all sequences in schema public to service_role;
 

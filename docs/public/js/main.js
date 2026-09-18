@@ -11,6 +11,7 @@ import * as projects from './projects.js';
 import * as dashboard from './dashboard.js';
 import * as reports from './reports.js';
 import * as searchConsole from './searchConsole.js';
+import * as geo from './geo.js';
 import * as auth from './auth.js';
 
 initTheme();
@@ -20,6 +21,7 @@ keywordsModal.init();
 settingsModal.init();
 reports.init();
 searchConsole.init();
+geo.init();
 projects.init(async () => {
 	await feed.loadRuns();
 	await dashboard.loadProjectDashboard();
