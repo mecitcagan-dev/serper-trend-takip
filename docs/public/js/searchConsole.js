@@ -178,49 +178,54 @@ async function loadGscData() {
 		return;
 	}
 	setStatus('Search Console verisi getiriliyor…');
-	const endpoint = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
-	const response = await fetch(endpoint, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${accessToken}`,
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({
-			startDate,
-			endDate,
-			dimensions: ['query'],
-			rowLimit: 1000,
-		}),
-	});
-	if (response.status === 401) {
-		accessToken = null;
-		setStatus('Google erişimi sona erdi; tekrar bağlan.', true);
-		return;
-	}
-	if (!response.ok) {
-		const errorBody = await response.json().catch(() => ({}));
-		setStatus(errorBody.error?.message || 'Search Console verisi okunamadı.', true);
-		return;
-	}
+	try {
+		const endpoint = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
+		const response = await fetch(endpoint, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				startDate,
+				endDate,
+				dimensions: ['query'],
+				rowLimit: 1000,
+			}),
+		});
+		if (response.status === 401) {
+			accessToken = null;
+			setStatus('Google erişimi sona erdi; tekrar bağlan.', true);
+			return;
+		}
+		if (!response.ok) {
+			const errorBody = await response.json().catch(() => ({}));
+			setStatus(errorBody.error?.message || 'Search Console verisi okunamadı.', true);
+			return;
+		}
 
-	const data = await response.json();
-	const [keywordsResult, runsResult] = await Promise.all([
-		sb.from('keywords')
-			.select('keyword')
-			.eq('project_id', state.currentProject.id)
-			.eq('active', true),
-		sb.from('runs')
-			.select('details')
-			.eq('project_id', state.currentProject.id)
-			.order('run_time', { ascending: false })
-			.limit(1),
-	]);
-	const trackedKeywords = new Set(
-		(keywordsResult.data || []).map((row) => row.keyword.toLowerCase()),
-	);
-	const serpDetails = runsResult.data?.[0]?.details || {};
-	renderGscRows(data.rows || [], trackedKeywords, serpDetails);
-	setStatus(`${data.rows?.length || 0} sorgu getirildi.`);
+		const data = await response.json();
+		const [keywordsResult, runsResult] = await Promise.all([
+			sb.from('keywords')
+				.select('keyword')
+				.eq('project_id', state.currentProject.id)
+				.eq('active', true),
+			sb.from('runs')
+				.select('details')
+				.eq('project_id', state.currentProject.id)
+				.order('run_time', { ascending: false })
+				.limit(1),
+		]);
+		const trackedKeywords = new Set(
+			(keywordsResult.data || []).map((row) => row.keyword.toLowerCase()),
+		);
+		const serpDetails = runsResult.data?.[0]?.details || {};
+		renderGscRows(data.rows || [], trackedKeywords, serpDetails);
+		setStatus(`${data.rows?.length || 0} sorgu getirildi.`);
+	} catch (error) {
+		console.error(error);
+		setStatus('Search Console bağlantısı kurulamadı.', true);
+	}
 }
 
 function openModal() {
