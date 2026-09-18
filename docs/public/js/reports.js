@@ -1,6 +1,7 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { escapeHtml } from './utils.js';
+import { logAudit } from './audit.js';
 
 let reportRows = [];
 
@@ -211,6 +212,11 @@ function downloadReport() {
 	link.download = `${state.currentProject.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-rapor.csv`;
 	link.click();
 	URL.revokeObjectURL(url);
+	logAudit('report_csv_exported', {
+		row_count: reportRows.length,
+		start_date: document.getElementById('reportStartDate').value,
+		end_date: document.getElementById('reportEndDate').value,
+	});
 }
 
 function openReport() {
@@ -237,4 +243,3 @@ export function init() {
 		if (event.target.id === 'reportModalOverlay') closeReport();
 	});
 }
-

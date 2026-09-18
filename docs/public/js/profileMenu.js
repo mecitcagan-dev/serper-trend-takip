@@ -1,10 +1,18 @@
 import { toggleTheme } from './theme.js';
+import { state } from './state.js';
+
+const ROLE_LABELS = {
+	admin: 'Yönetici',
+	team_member: 'Ekip üyesi',
+	client_viewer: 'Müşteri — salt okunur',
+};
 
 export function renderProfileAvatar(user) {
 	if (!user) return;
 	const initialsEl = document.getElementById('profileInitials');
 	const imgEl = document.getElementById('profileImg');
 	const emailEl = document.getElementById('profileInfoEmail');
+	const roleEl = document.getElementById('profileInfoRole');
 
 	const avatarUrl = user.user_metadata?.avatar_url;
 	const email = user.email || '';
@@ -12,6 +20,8 @@ export function renderProfileAvatar(user) {
 		user.user_metadata?.full_name || user.user_metadata?.name || email;
 
 	if (emailEl) emailEl.textContent = email;
+	if (roleEl) roleEl.textContent = ROLE_LABELS[state.userRole] || 'Yönetici';
+	applyRolePermissions(state.userRole);
 
 	if (avatarUrl && imgEl) {
 		imgEl.src = avatarUrl;
@@ -22,6 +32,16 @@ export function renderProfileAvatar(user) {
 		initialsEl.classList.remove('hidden');
 		if (imgEl) imgEl.classList.add('hidden');
 	}
+}
+
+export function applyRolePermissions(role = 'admin') {
+	const readOnly = role === 'client_viewer';
+	['settingsBtn', 'editKeywordsBtn', 'addProjectBtn', 'editProjectBtn', 'geoBtn'].forEach(
+		(id) => document.getElementById(id)?.classList.toggle('hidden', readOnly),
+	);
+	if (readOnly) document.getElementById('serperKeyBanner')?.classList.add('hidden');
+	const roleEl = document.getElementById('profileInfoRole');
+	if (roleEl) roleEl.textContent = ROLE_LABELS[role] || 'Yönetici';
 }
 
 function toggleProfileDropdown(e) {

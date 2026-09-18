@@ -1,6 +1,7 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { escapeHtml } from './utils.js';
+import { logAudit } from './audit.js';
 
 export async function openKeywordModal() {
 	document.getElementById('modalOverlay').classList.add('open');
@@ -163,6 +164,11 @@ async function saveKeywords() {
 				})),
 			);
 		}
+		logAudit('keywords_saved', {
+			inserted: toInsert.length,
+			updated: toUpdate.length,
+			deleted: toDelete.length,
+		});
 		status.textContent = 'Kaydedildi ✓';
 		setTimeout(
 			() => document.getElementById('modalOverlay').classList.remove('open'),

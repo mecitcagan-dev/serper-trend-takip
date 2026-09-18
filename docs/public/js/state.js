@@ -3,6 +3,7 @@
 
 export const state = {
 	currentUser: null,
+	userRole: 'admin',
 	projects: [],
 	currentProject: null,
 	allRuns: [],

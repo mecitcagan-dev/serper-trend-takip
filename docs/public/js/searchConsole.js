@@ -1,6 +1,7 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { escapeHtml } from './utils.js';
+import { logAudit } from './audit.js';
 
 const CLIENT_ID_STORAGE_KEY = 'serper-trend-google-client-id';
 const GSC_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
@@ -134,6 +135,7 @@ async function saveProperty() {
 		return;
 	}
 	state.currentProject = data;
+	logAudit('gsc_property_saved', { site_url: siteUrl });
 	setStatus('Search Console mülkü projeye kaydedildi.');
 }
 
@@ -247,4 +249,3 @@ export function init() {
 			if (event.target.id === 'searchConsoleModalOverlay') closeModal();
 		});
 }
-

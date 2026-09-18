@@ -1,6 +1,7 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { escapeHtml } from './utils.js';
+import { logAudit } from './audit.js';
 
 let onProjectChange = () => {};
 let editingProjectId = null;
@@ -171,6 +172,9 @@ async function saveProject(event) {
 	}
 
 	state.currentProject = data;
+	logAudit(editingProjectId ? 'project_updated' : 'project_created', {
+		project_id: data.id,
+	});
 	closeProjectModal();
 	await loadProjects({ notify: true });
 }

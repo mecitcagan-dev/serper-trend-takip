@@ -64,6 +64,12 @@ serper-trend-takip/
             ├── keywordsModal.js      ← kelime ekleme/silme
             ├── settingsModal.js      ← Serper key + tarama sıklığı
             ├── serperKey.js          ← ücretsiz kota banner'ı
+            ├── projects.js           ← müşteri/proje bağlamı
+            ├── dashboard.js          ← proje özeti ve kota
+            ├── reports.js            ← CSV + yazdırılabilir rapor
+            ├── searchConsole.js      ← ücretsiz GSC OAuth/Analytics
+            ├── geo.js                ← manuel GEO kanıt kayıtları
+            ├── audit.js              ← işlem audit kayıtları
             ├── profileMenu.js        ← avatar/dropdown, tema, çıkış
             ├── theme.js              ← açık/koyu tema
             └── utils.js              ← escapeHtml, tarih/saat formatlama
@@ -102,12 +108,13 @@ tahmin etmemeli.
 ## Storage Modeli
 
 - **Veritabanı (Supabase/Postgres)**: Tüm kalıcı veri burada —
-  `profiles`, `keywords`, `runs`, `keyword_snapshots`, `settings`
+  `profiles`, `projects`, `keywords`, `runs`, `keyword_snapshots`, `settings`,
+  `geo_checks`, `audit_logs`, `scan_leases`
   (bkz. `schema.sql`). Blob/dosya depolama YOK, her şey ilişkisel
   tablo + jsonb kolonlarda (`runs.details`,
   `keyword_snapshots.organic` vb.).
-- **Tarayıcı localStorage**: Sadece tema tercihi (`stt-theme`). Başka
-  hiçbir veri client tarafında saklanmaz.
+- **Tarayıcı localStorage**: Sadece tema tercihi (`stt-theme`) ve Google OAuth
+  Client ID tutulabilir. Access token kalıcı olarak saklanmaz.
 - **Ortam değişkenleri / secrets**: `.env` (yerel, gitignore'da)
   sadece public anon key'leri içerir; GitHub Secrets gizli
   service_role ve paylaşımlı serper key'i içerir; Vercel env vars
@@ -128,6 +135,10 @@ tahmin etmemeli.
   (`protect_shared_key_scans_used`) bu kolonun sadece `service_role`
   tarafından değiştirilmesine izin verir — kullanıcı kendi hakkını
   sıfırlayamaz.
+- `profiles.role` değerleri `admin`, `team_member` ve `client_viewer` olarak
+  tanımlıdır. `client_viewer`, veritabanı policy'leriyle yazma işlemlerinden
+  engellenir; ücretsiz teslim sürümünde erişim modeli kullanıcı sahipliği
+  üzerindedir, ekip davet UI'ı eklenmemiştir.
 
 ## Değişmezler (Invariants)
 

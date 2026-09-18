@@ -1,6 +1,7 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { escapeHtml } from './utils.js';
+import { logAudit } from './audit.js';
 
 const SOURCE_LABELS = {
 	manual_chatgpt: 'ChatGPT manuel',
@@ -81,6 +82,10 @@ async function saveCheck(event) {
 		status.textContent = 'Kaydedilemedi. schema.sql v10 migrationını çalıştır.';
 		return;
 	}
+	logAudit('geo_check_created', {
+		source: document.getElementById('geoSourceInput').value,
+		brand_mentioned: document.getElementById('geoBrandInput').checked,
+	});
 	status.textContent = 'Kaydedildi ✓';
 	document.getElementById('geoForm').reset();
 	await loadChecks();
@@ -104,4 +109,3 @@ export function init() {
 		if (event.target.id === 'geoModalOverlay') closeModal();
 	});
 }
-

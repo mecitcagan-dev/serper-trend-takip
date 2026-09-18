@@ -261,6 +261,11 @@ body {
 	color: var(--text-secondary);
 	word-break: break-all;
 }
+.profile-dropdown-role {
+	margin-top: 4px;
+	font-size: 11px;
+	color: var(--text-tertiary);
+}
 .profile-dropdown-divider {
 	height: 1px;
 	background: var(--border-soft);

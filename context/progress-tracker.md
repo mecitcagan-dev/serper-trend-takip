@@ -160,7 +160,7 @@ tek basamak hedef domain oynama gürültü sayılıyor. Proje başına 5 dakikal
 kota ve gerçek tarama aralığını gösteriyor; varsayılan aralık 6 saat, test
 aralıkları arayüzde açıkça işaretli.
 
-### 9. Ajans güvenliği ve teslim hazırlığı
+### 9. Ajans güvenliği ve teslim hazırlığı — Kod/doküman hazır
 
 - Müşteri verilerinin proje bazında RLS izolasyonu doğrulanacak.
 - API anahtarlarının saklama ve erişim modeli gözden geçirilecek.
@@ -169,6 +169,13 @@ aralıkları arayüzde açıkça işaretli.
   tutulacak.
 - Vayes kullanım senaryosu, kurulum ve pilot sonuçları teslim dokümanına
   dönüştürülecek.
+
+**Kontrol:** Proje/kelime/run/GSC/GEO erişimleri RLS ile proje sahipliğine
+bağlandı. `admin`, `team_member`, `client_viewer` rol temeli eklendi;
+`client_viewer` veritabanı seviyesinde yazma işlemlerinden engelleniyor. Proje,
+kelime, GSC, GEO ve CSV işlemleri için temel audit kaydı tutuluyor. Ücretsiz
+teslim sürümünde ekip davet/üyelik UI'ı yok; erişim modeli güvenli kullanıcı
+sahipliğiyle sınırlı. [Vayes teslim notu](vayes-delivery.md) oluşturuldu.
 
 **Tamamlanma ölçütü:** Vayes ekibi yeni bir müşteri projesini güvenli biçimde
 oluşturup izleyebilmeli ve müşteriye yalnızca izin verilen görünümü
@@ -190,4 +197,7 @@ paylaşabilmeli.
 - [x] GitHub Actions + cron-job.org otomasyonu çalışıyor.
 - [x] `scan.py` sonuçları Supabase'e yazıyor.
 - [x] Progress tracker Vayes odaklı plan hâline getirildi.
-- [ ] Madde 1: müşteri/proje ayrımı.
+- [x] Maddeler 1–9 için ücretsiz ürünleştirme kodu, migrationlar ve teslim
+      notu hazırlandı.
+- [ ] Pilot doğrulama: Supabase migrationlarını çalıştırıp Vayes projesinde
+      canlı kabul listesini tamamlamak.

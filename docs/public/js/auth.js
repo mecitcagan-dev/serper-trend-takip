@@ -1,7 +1,7 @@
 import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { checkSerperKey } from './serperKey.js';
-import { renderProfileAvatar } from './profileMenu.js';
+import { renderProfileAvatar, applyRolePermissions } from './profileMenu.js';
 import { loadRuns, subscribeToRuns, unsubscribeFromRuns } from './feed.js';
 import { loadProjects } from './projects.js';
 import { loadProjectDashboard } from './dashboard.js';
@@ -66,7 +66,15 @@ function showAuthGate() {
 async function showApp() {
 	document.getElementById('authGate').classList.add('hidden');
 	document.getElementById('appRoot').classList.remove('hidden');
+	const { data: profile, error: profileError } = await sb
+		.from('profiles')
+		.select('role')
+		.eq('id', state.currentUser.id)
+		.limit(1);
+	if (profileError) console.error(profileError);
+	state.userRole = profile?.[0]?.role || 'admin';
 	renderProfileAvatar(state.currentUser);
+	applyRolePermissions(state.userRole);
 	subscribeToRuns(state.currentUser.id); // ← eklendi: F5'siz otomatik güncelleme
 	const hasProject = await loadProjects({ notify: false });
 	if (!state.appInitialized) {
@@ -313,6 +321,7 @@ export function init() {
 			showApp();
 		} else {
 			state.currentUser = null;
+			state.userRole = 'admin';
 			handledInitialSession = true;
 			state.appInitialized = false;
 			state.projects = [];
