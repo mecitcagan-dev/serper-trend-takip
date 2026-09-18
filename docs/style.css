@@ -23,6 +23,31 @@
 	--ev-none-soft: rgba(147, 148, 154, 0.12);
 }
 
+:root[data-theme='light'] {
+	--bg-rail: #eef0f4;
+	--bg-panel: #ffffff;
+	--bg-elevated: #f6f7f9;
+	--bg-elevated-hover: #ebedf1;
+	--border: #dfe2e8;
+	--border-soft: #e8eaee;
+	--text-primary: #16171a;
+	--text-secondary: #6b6d76;
+	--text-tertiary: #9a9ca6;
+	--accent: #3d6df2;
+	--accent-soft: rgba(61, 109, 242, 0.1);
+	--danger: #d9463f;
+	--danger-soft: rgba(217, 70, 63, 0.08);
+
+	--ev-rakip: #d97a1f;
+	--ev-rakip-soft: rgba(217, 122, 31, 0.12);
+	--ev-siralama: #3d6df2;
+	--ev-siralama-soft: rgba(61, 109, 242, 0.1);
+	--ev-trend: #8354dd;
+	--ev-trend-soft: rgba(131, 84, 221, 0.1);
+	--ev-none: #6b6d76;
+	--ev-none-soft: rgba(107, 109, 118, 0.08);
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -189,6 +214,43 @@ body {
 }
 .profile-dropdown-danger:hover {
 	background: var(--danger-soft);
+}
+
+/* ----- Serper API key uyarı banner'ı ----- */
+.serper-banner {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 0 18px 12px;
+	padding: 11px 14px;
+	border-radius: 10px;
+	background: rgba(245, 166, 35, 0.12);
+	border: 1px solid rgba(245, 166, 35, 0.32);
+}
+.serper-banner.hidden {
+	display: none;
+}
+.serper-banner span {
+	flex: 1;
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--text-primary);
+}
+.serper-banner-btn {
+	flex-shrink: 0;
+	border: none;
+	background: #f5a623;
+	color: #1b1c20;
+	padding: 7px 14px;
+	border-radius: 7px;
+	font-weight: 600;
+	font-size: 12.5px;
+	font-family: inherit;
+	cursor: pointer;
+	white-space: nowrap;
+}
+.serper-banner-btn:hover {
+	opacity: 0.88;
 }
 
 .tabs {
