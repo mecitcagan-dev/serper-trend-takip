@@ -2,10 +2,22 @@ import { sb } from './supabaseClient.js';
 import { state } from './state.js';
 import { escapeHtml, dayLabel, timeLabel } from './utils.js';
 export const EVENT_META = {
-	yeni_rakip: { icon: '🆕', label: 'Yeni Rakip Tespit Edildi' },
-	siralama_degisti: { icon: '📈', label: 'Sıralama Değişimi' },
-	yeni_trend: { icon: '💬', label: 'Yeni Trend / Soru Tespit Edildi' },
-	degisiklik_yok: { icon: '🔍', label: 'Rutin Tarama' },
+	yeni_rakip: {
+		icon: '<svg viewBox="0 0 20 20" fill="none"><circle cx="7.5" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 17c0-3 2.4-5.2 5-5.2s5 2.2 5 5.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M15.5 6.5v5M13 9h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+		label: 'Yeni Rakip Tespit Edildi',
+	},
+	siralama_degisti: {
+		icon: '<svg viewBox="0 0 20 20" fill="none"><path d="M2.5 13.5 7.3 8.7l3 3 6.2-6.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 4.7h3.5v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+		label: 'Sıralama Değişimi',
+	},
+	yeni_trend: {
+		icon: '<svg viewBox="0 0 20 20" fill="none"><path d="M3 4.5h14a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1H8l-4 3v-3H3a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.2 8c0-1 .9-1.6 1.8-1.6 1 0 1.7.6 1.7 1.4 0 .7-.4 1-.9 1.3-.5.3-.8.6-.8 1.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="12.3" r=".9" fill="currentColor"/></svg>',
+		label: 'Yeni Trend / Soru Tespit Edildi',
+	},
+	degisiklik_yok: {
+		icon: '<svg viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M12.5 12.5 17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+		label: 'Rutin Tarama',
+	},
 };
 
 export async function loadRuns() {
@@ -138,8 +150,8 @@ export function renderDetail(run) {
 
 	panel.innerHTML = `
     <div class="detail-header">
-      <div class="detail-title">${meta.icon} ${meta.label}</div>
-      <div class="detail-subtitle">${date.toLocaleString('tr-TR')}</div>
+      <div class="detail-title"><span class="detail-title-icon ev-${run.event_type}">${meta.icon}</span>${meta.label}</div>
+			<div class="detail-subtitle">${date.toLocaleString('tr-TR')}</div>
     </div>
     <div class="detail-body">${bodyHtml}</div>
   `;

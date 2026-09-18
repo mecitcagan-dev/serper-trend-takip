@@ -130,7 +130,7 @@ body {
 /* ----- Profil avatarı (sayfanın sağ üstüne sabit, YouTube tarzı) ----- */
 .profile-wrap {
 	position: fixed;
-	top: 14px;
+	top: 18px;
 	right: 20px;
 	z-index: 100;
 }
@@ -328,21 +328,27 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 15px;
+}
+.feed-card-icon svg {
+	width: 18px;
+	height: 18px;
 }
 .feed-card-icon.ev-yeni_rakip {
 	background: var(--ev-rakip-soft);
+	color: var(--ev-rakip);
 }
 .feed-card-icon.ev-siralama_degisti {
 	background: var(--ev-siralama-soft);
+	color: var(--ev-siralama);
 }
 .feed-card-icon.ev-yeni_trend {
 	background: var(--ev-trend-soft);
+	color: var(--ev-trend);
 }
 .feed-card-icon.ev-degisiklik_yok {
 	background: var(--ev-none-soft);
+	color: var(--ev-none);
 }
-
 .feed-card-body {
 	min-width: 0;
 	flex: 1;
@@ -393,6 +399,28 @@ body {
 	font-size: 18px;
 	font-weight: 700;
 	letter-spacing: -0.01em;
+}
+.detail-title-icon {
+	display: inline-flex;
+	align-items: center;
+	vertical-align: -4px;
+	margin-right: 6px;
+}
+.detail-title-icon svg {
+	width: 20px;
+	height: 20px;
+}
+.detail-title-icon.ev-yeni_rakip {
+	color: var(--ev-rakip);
+}
+.detail-title-icon.ev-siralama_degisti {
+	color: var(--ev-siralama);
+}
+.detail-title-icon.ev-yeni_trend {
+	color: var(--ev-trend);
+}
+.detail-title-icon.ev-degisiklik_yok {
+	color: var(--ev-none);
 }
 .detail-subtitle {
 	color: var(--text-tertiary);
