@@ -31,7 +31,19 @@ function resetDashboard(message = '') {
 	setText('dashboardNextRun', '—');
 	setText('dashboardKeywordCount', '—');
 	setText('dashboardQuota', '—');
+	setText('dashboardToggleMeta', 'Son tarama, aktif kelimeler ve kota');
 	setText('dashboardStatus', message);
+}
+
+export function init() {
+	const toggle = document.getElementById('dashboardToggleBtn');
+	const panel = document.getElementById('projectDashboard');
+	if (!toggle || !panel) return;
+
+	toggle.addEventListener('click', () => {
+		const isOpen = panel.classList.toggle('open');
+		toggle.setAttribute('aria-expanded', String(isOpen));
+	});
 }
 
 export async function loadProjectDashboard() {
@@ -78,6 +90,7 @@ export async function loadProjectDashboard() {
 	].find(Boolean);
 	if (firstError) {
 		console.error(firstError);
+		setText('dashboardToggleMeta', 'Proje özeti yüklenemedi');
 		setText('dashboardStatus', 'Proje özeti yüklenemedi.');
 		return;
 	}
@@ -98,6 +111,13 @@ export async function loadProjectDashboard() {
 		'dashboardQuota',
 		hasOwnKey ? 'Kişisel key' : `${remaining}/${SHARED_KEY_LIMIT} ücretsiz`,
 	);
+	const activeKeywordCount = keywordsResult.data?.length || 0;
+	const quotaLabel = hasOwnKey
+		? 'Kişisel key'
+		: `${remaining}/${SHARED_KEY_LIMIT} kota`;
+	setText(
+		'dashboardToggleMeta',
+		`${lastRun ? `Son: ${formatDate(lastRun)}` : 'Henüz tarama yok'} · ${activeKeywordCount} aktif kelime · ${quotaLabel}`,
+	);
 	setText('dashboardStatus', `${interval} dakikalık proje tarama aralığı`);
 }
-

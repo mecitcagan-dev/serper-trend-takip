@@ -33,7 +33,10 @@ function renderProjectPicker() {
 			const target = state.currentProject.target_domain
 				? `Hedef: ${state.currentProject.target_domain}`
 				: 'Hedef domain yok';
-			const market = `${state.currentProject.country_code || 'tr'} / ${state.currentProject.language_code || 'tr'} / ${state.currentProject.device || 'desktop'}`;
+			const country = (state.currentProject.country_code || 'tr').toUpperCase();
+			const language = (state.currentProject.language_code || 'tr').toUpperCase();
+			const device = state.currentProject.device === 'mobile' ? 'Mobil' : 'Masaüstü';
+			const market = `${country} / ${language} · ${device}`;
 			meta.textContent = `${target} · ${market}`;
 		}
 	} else {

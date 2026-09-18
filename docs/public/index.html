@@ -192,17 +192,11 @@
 					<div class="feed-heading">
 						<h1>Aktivite</h1>
 						<div class="project-context">
+							<div class="project-picker-label">
+								<label for="projectSelect">Aktif proje</label>
+							</div>
 							<div class="project-picker-row">
-								<label for="projectSelect">Proje</label>
 								<select id="projectSelect" aria-label="Aktif proje"></select>
-								<button
-									class="project-add-btn"
-									id="addProjectBtn"
-									type="button"
-									aria-label="Yeni proje ekle"
-								>
-									+
-								</button>
 								<button
 									class="project-add-btn"
 									id="editProjectBtn"
@@ -219,30 +213,44 @@
 						</div>
 					</div>
 					<div class="header-actions">
-						<button
-							class="icon-btn report-btn"
-							id="reportBtn"
-							title="Rapor oluştur"
-							aria-label="Rapor oluştur"
-						>
-							Rapor
-						</button>
-						<button
-							class="icon-btn report-btn"
-							id="searchConsoleBtn"
-							title="Search Console"
-							aria-label="Search Console"
-						>
-							GSC
-						</button>
-						<button
-							class="icon-btn report-btn"
-							id="geoBtn"
-							title="GEO görünürlük"
-							aria-label="GEO görünürlük"
-						>
-							GEO
-						</button>
+						<div class="tools-wrap" id="toolsMenuWrap">
+							<button
+								class="header-tool-toggle"
+								id="toolsMenuBtn"
+								type="button"
+								aria-expanded="false"
+								aria-haspopup="true"
+							>
+								<span>Araçlar</span>
+								<span class="header-tool-chevron" aria-hidden="true">⌄</span>
+							</button>
+							<div class="tools-menu hidden" id="toolsMenu">
+								<button
+									class="tools-menu-item"
+									id="reportBtn"
+									type="button"
+									title="Rapor oluştur"
+								>
+									Raporlama
+								</button>
+								<button
+									class="tools-menu-item"
+									id="searchConsoleBtn"
+									type="button"
+									title="Google Search Console"
+								>
+									Search Console
+								</button>
+								<button
+									class="tools-menu-item"
+									id="geoBtn"
+									type="button"
+									title="GEO görünürlük"
+								>
+									GEO görünürlük
+								</button>
+							</div>
+						</div>
 						<button
 							class="icon-btn"
 							id="refreshBtn"
@@ -361,6 +369,22 @@
 					</button>
 				</div>
 
+				<button
+					class="dashboard-toggle"
+					id="dashboardToggleBtn"
+					type="button"
+					aria-expanded="false"
+					aria-controls="projectDashboard"
+				>
+					<span class="dashboard-toggle-main">
+						<strong class="dashboard-toggle-title">Proje özeti</strong>
+						<span class="dashboard-toggle-meta" id="dashboardToggleMeta"
+							>Son tarama, aktif kelimeler ve kota</span
+						>
+					</span>
+					<span class="dashboard-toggle-chevron" aria-hidden="true">⌄</span>
+				</button>
+
 				<div class="project-dashboard" id="projectDashboard">
 					<div class="dashboard-card">
 						<span>Son tarama</span>
@@ -391,6 +415,11 @@
 				<div class="feed-list" id="feedList">
 					<div class="feed-empty" id="feedEmpty">Yükleniyor…</div>
 				</div>
+
+				<button class="project-add-fab" id="addProjectBtn" type="button">
+					<span class="project-add-fab-icon" aria-hidden="true">+</span>
+					<span>Yeni proje</span>
+				</button>
 			</div>
 
 			<!-- Sağ panel: Detay -->
