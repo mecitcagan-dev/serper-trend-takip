@@ -3,7 +3,11 @@ import { state } from './state.js';
 import { SHARED_KEY_LIMIT, checkSerperKey } from './serperKey.js';
 
 const SETTINGS_KEY = 'scan_interval_minutes';
-
+// scan.py'deki get_user_setting() içindeki fallback değeriyle (360) senkron
+// tutulmalı — kullanıcı hiç kaydetmediyse backend'de fiilen bu değer
+// kullanılıyor, dropdown'ın da onu göstermesi gerekiyor (serperKey.js'teki
+// SHARED_KEY_LIMIT ile aynı "iki dosyada bağımsız senkron sabit" deseni).
+const DEFAULT_INTERVAL_MINUTES = '360';
 export async function openSettingsModal() {
 	document.getElementById('settingsModalOverlay').classList.add('open');
 	document.getElementById('settingsSaveStatus').textContent = '';
@@ -42,14 +46,15 @@ export async function openSettingsModal() {
 	}
 
 	// Tarama sıklığı yükle (RLS filtreli)
+	// Tarama sıklığı yükle (RLS filtreli)
 	const { data } = await sb
 		.from('settings')
 		.select('value')
 		.eq('key', SETTINGS_KEY)
 		.limit(1);
-	if (data?.length) {
-		document.getElementById('intervalSelect').value = data[0].value;
-	}
+	document.getElementById('intervalSelect').value = data?.length
+		? data[0].value
+		: DEFAULT_INTERVAL_MINUTES;
 }
 
 async function saveSettings() {

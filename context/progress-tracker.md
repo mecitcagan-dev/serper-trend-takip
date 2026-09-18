@@ -155,6 +155,7 @@ altyapı sağlayacak (`scan.py`'nin service_role ile `auth.users`
   `config.js`'i `docs/public/config.js` olarak üretiyor; `.gitignore`
   buna göre güncellendi. `vercel.json` değişmedi (Vercel'in varsayılan
   `public` output arayışı artık gerçek konumla örtüşüyor).
+  Ayarlar modalı varsayılan tarama sıklığı gösterimi düzeltildi: settings satırı olmayan kullanıcılar için dropdown artık scan.py'deki gerçek fallback değeri olan 360 dk ("6 saat") gösteriyor; önceden HTML'deki ilk <option>'a (0 dk, "her tetiklemede") düşüyordu — kullanıcıyı yanıltıp yanlışlıkla paylaşımlı key kotasını hızla tüketmesine yol açabilirdi (settingsModal.js).
 
 ## Devam Eden
 
