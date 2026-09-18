@@ -1,19 +1,25 @@
 // Bu script, build sırasında SUPABASE_URL / SUPABASE_ANON_KEY ortam
-// değişkenlerini okuyup docs/config.js dosyasını otomatik üretir.
+// değişkenlerini okuyup config.js dosyasını (bu script'in bir üst
+// klasörüne, yani docs/'un köküne) otomatik üretir.
 // - Vercel'de: Project Settings > Environment Variables içine eklediğin
 //   değerler build sırasında process.env üzerinden otomatik gelir.
-// - Yerelde: proje kökünde bir .env dosyası oluşturursan (git'e girmez),
-//   bu script onu okuyup aynı şekilde config.js üretir.
+// - Yerelde: docs/.env veya repo kökünde bir .env dosyası oluşturursan
+//   (git'e girmez), bu script onu okuyup aynı şekilde config.js üretir.
 //
-// docs/config.js artık elle doldurulmuyor / repoya commit edilmiyor —
+// config.js artık elle doldurulmuyor / repoya commit edilmiyor —
 // her build'de burada yeniden üretiliyor.
 
 const fs = require('fs');
 const path = require('path');
 
 function loadDotEnvIfPresent() {
-	const envPath = path.join(__dirname, '..', '.env');
-	if (!fs.existsSync(envPath)) return;
+	// Hem docs/.env hem de repo kökü/.env konumunu dene.
+	const candidates = [
+		path.join(__dirname, '..', '.env'), // docs/.env
+		path.join(__dirname, '..', '..', '.env'), // repo kökü/.env
+	];
+	const envPath = candidates.find((p) => fs.existsSync(p));
+	if (!envPath) return;
 
 	const lines = fs.readFileSync(envPath, 'utf-8').split('\n');
 	for (const rawLine of lines) {
@@ -43,7 +49,7 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 	console.error(
 		'HATA: SUPABASE_URL ve/veya SUPABASE_ANON_KEY tanımlı değil.\n' +
-			"  - Yerelde: proje kökünde bir .env dosyası oluştur (.env.example'a bak).\n" +
+			"  - Yerelde: docs/.env veya repo kökünde bir .env dosyası oluştur (.env.example'a bak).\n" +
 			"  - Vercel'de: Project Settings > Environment Variables kısmına ekle.",
 	);
 	process.exit(1);
@@ -55,6 +61,6 @@ const SUPABASE_URL = ${JSON.stringify(SUPABASE_URL)};
 const SUPABASE_ANON_KEY = ${JSON.stringify(SUPABASE_ANON_KEY)};
 `;
 
-const outPath = path.join(__dirname, '..', 'docs', 'config.js');
+const outPath = path.join(__dirname, '..', 'config.js');
 fs.writeFileSync(outPath, output);
 console.log(`✓ config.js üretildi: ${outPath}`);
