@@ -141,6 +141,15 @@ grant select, insert, update, delete on public.keywords to authenticated;
 grant select, insert, update, delete on public.settings to authenticated;
 grant select, insert, update on public.profiles to authenticated;
 
+-- service_role (scan.py, GitHub Actions) — RLS'i bypass etse de Postgres'in
+-- GRANT sistemi ayrı bir katman; bu olmadan "permission denied" hatası alınır.
+grant select, insert, update, delete on public.profiles to service_role;
+grant select, insert, update, delete on public.keywords to service_role;
+grant select, insert, update, delete on public.runs to service_role;
+grant select, insert, update, delete on public.keyword_snapshots to service_role;
+grant select, insert, update, delete on public.settings to service_role;
+grant usage on all sequences in schema public to service_role;
+
 -- Not: GitHub Actions script'i (scan.py) service_role key kullanır,
 -- bu RLS'i otomatik bypass eder (bypassrls). Yukarıdaki kurallar sadece
 -- giriş yapmış frontend kullanıcıları içindir — her kullanıcı sadece
