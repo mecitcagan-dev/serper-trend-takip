@@ -9,6 +9,7 @@ import * as keywordsModal from './keywordsModal.js';
 import * as settingsModal from './settingsModal.js';
 import * as projects from './projects.js';
 import * as dashboard from './dashboard.js';
+import * as reports from './reports.js';
 import * as auth from './auth.js';
 
 initTheme();
@@ -16,6 +17,7 @@ profileMenu.init(auth.handleLogout);
 feed.init();
 keywordsModal.init();
 settingsModal.init();
+reports.init();
 projects.init(async () => {
 	await feed.loadRuns();
 	await dashboard.loadProjectDashboard();

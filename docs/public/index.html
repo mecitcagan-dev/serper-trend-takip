@@ -220,6 +220,14 @@
 					</div>
 					<div class="header-actions">
 						<button
+							class="icon-btn report-btn"
+							id="reportBtn"
+							title="Rapor oluştur"
+							aria-label="Rapor oluştur"
+						>
+							Rapor
+						</button>
+						<button
 							class="icon-btn"
 							id="refreshBtn"
 							title="Yenile"
@@ -371,6 +379,57 @@
 			<!-- Sağ panel: Detay -->
 			<div class="detail-panel" id="detailPanel">
 				<div class="detail-empty">Bir kart seç, detaylı raporu burada gör.</div>
+			</div>
+		</div>
+
+		<!-- Rapor Modal -->
+		<div class="modal-overlay" id="reportModalOverlay">
+			<div class="modal modal-report">
+				<div class="modal-header">
+					<h2>Proje Raporu</h2>
+					<button class="icon-btn" id="closeReportModalBtn" aria-label="Kapat">
+						<svg viewBox="0 0 20 20" fill="none">
+							<path
+								d="M5 5l10 10M15 5 5 15"
+								stroke="currentColor"
+								stroke-width="1.6"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="report-filters">
+						<div>
+							<label class="settings-section-label" for="reportStartDate"
+								>Başlangıç</label
+							>
+							<input class="settings-input" type="date" id="reportStartDate" />
+						</div>
+						<div>
+							<label class="settings-section-label" for="reportEndDate"
+								>Bitiş</label
+							>
+							<input class="settings-input" type="date" id="reportEndDate" />
+						</div>
+						<button class="secondary-btn" id="loadReportBtn" type="button">
+							Raporu getir
+						</button>
+					</div>
+					<div class="report-actions">
+						<button class="secondary-btn" id="downloadReportBtn" type="button">
+							CSV indir
+						</button>
+						<button class="secondary-btn" id="printReportBtn" type="button">
+							Yazdır / PDF kaydet
+						</button>
+					</div>
+					<div class="report-status" id="reportStatus"></div>
+					<div class="report-summary" id="reportSummary"></div>
+					<div class="report-table-wrap" id="reportTableWrap">
+						<p class="detail-muted">Raporu görmek için tarih aralığı seç.</p>
+					</div>
+				</div>
 			</div>
 		</div>
 

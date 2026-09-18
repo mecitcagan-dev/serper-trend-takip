@@ -86,7 +86,7 @@ dashboard özeti yenileniyor. Özette son tarama, tahmini sonraki tarama, aktif
 kelime sayısı ve Serper kota durumu var. Realtime yeni tarama geldiğinde özet
 de yenileniyor; statik kontroller geçti.
 
-### 5. Raporlama ve dışa aktarma
+### 5. Raporlama ve dışa aktarma — Kod hazır
 
 - Proje bazında tarih aralığı seçilebilecek.
 - Haftalık/aylık değişim özeti oluşturulacak.
@@ -98,6 +98,11 @@ de yenileniyor; statik kontroller geçti.
 
 **Tamamlanma ölçütü:** Vayes, bir müşterinin seçilen dönem raporunu tek
 işlemle indirip müşteri sunumunda kullanabilmeli.
+
+**Kontrol:** Proje bazlı tarih aralığı, özet kutuları, hedef sıra/rakip/soru
+tablosu, UTF-8 CSV indirme ve tarayıcının ücretsiz yazdır/PDF akışı eklendi.
+Rapor verisi yalnızca seçili projenin `runs` kayıtlarından okunuyor; ücretli
+e-posta veya rapor servisi kullanılmıyor. Statik kontroller geçti.
 
 ### 6. Google Search Console bağlantısı
 

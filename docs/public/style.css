@@ -196,6 +196,11 @@ body {
 	background: var(--bg-elevated-hover);
 	color: var(--text-primary);
 }
+.report-btn {
+	width: auto;
+	padding: 0 8px;
+	font-size: 11.5px;
+}
 
 /* ----- Profil avatarı (sayfanın sağ üstüne sabit, YouTube tarzı) ----- */
 .profile-wrap {
@@ -604,6 +609,10 @@ body {
 .modal-wide {
 	width: min(460px, 90vw);
 }
+.modal-report {
+	width: min(850px, 94vw);
+	max-height: 88vh;
+}
 .modal-header {
 	display: flex;
 	justify-content: space-between;
@@ -626,6 +635,75 @@ body {
 	line-height: 1.55;
 	color: var(--text-secondary);
 	margin: 8px 0 14px;
+}
+.report-filters {
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	align-items: end;
+	gap: 10px;
+}
+.report-filters .settings-section-label {
+	margin-bottom: 6px;
+}
+.report-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin: 14px 0;
+}
+.report-status {
+	min-height: 18px;
+	font-size: 12px;
+	color: var(--text-tertiary);
+}
+.report-status.error {
+	color: var(--danger);
+}
+.report-summary {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 8px;
+	margin: 8px 0 14px;
+}
+.report-summary div {
+	padding: 9px 10px;
+	border: 1px solid var(--border-soft);
+	border-radius: 8px;
+	background: var(--bg-rail);
+}
+.report-summary strong,
+.report-summary span {
+	display: block;
+}
+.report-summary strong {
+	font-size: 16px;
+	color: var(--text-primary);
+}
+.report-summary span {
+	margin-top: 3px;
+	font-size: 11px;
+	color: var(--text-tertiary);
+}
+.report-table-wrap {
+	overflow: auto;
+}
+.report-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+.report-table th,
+.report-table td {
+	padding: 8px 9px;
+	border-bottom: 1px solid var(--border-soft);
+	text-align: left;
+	vertical-align: top;
+}
+.report-table th {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-tertiary);
+	white-space: nowrap;
 }
 .settings-section .settings-input + .modal-hint {
 	margin-bottom: 0;
@@ -1193,5 +1271,41 @@ select:focus-visible {
 	}
 	.project-dashboard {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.report-filters {
+		grid-template-columns: 1fr 1fr;
+	}
+	.report-filters .secondary-btn {
+		grid-column: 1 / -1;
+	}
+	.report-summary {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media print {
+	body > * {
+		display: none !important;
+	}
+	#reportModalOverlay,
+	#reportModalOverlay.open {
+		display: block !important;
+		position: static;
+		background: none;
+	}
+	#reportModalOverlay .modal {
+		width: 100%;
+		max-height: none;
+		border: none;
+		box-shadow: none;
+	}
+	#reportModalOverlay .modal-header button,
+	#reportModalOverlay .report-filters,
+	#reportModalOverlay .report-actions,
+	#reportModalOverlay .report-status {
+		display: none;
+	}
+	#reportModalOverlay .modal-body {
+		overflow: visible;
 	}
 }
