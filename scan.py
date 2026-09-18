@@ -1,6 +1,13 @@
 """Ana otomasyon scripti — çok kullanıcılı sürüm.
 
-Her kullanıcı kendi Serper API key'iyle ve kendi kelime listesiyle taranır.
+Her kullanıcı öncelikle kendi Serper API key'iyle taranır. Kendi key'ini
+girmemiş kullanıcılar, GitHub Secrets'taki ortak/paylaşımlı "deneme" key'i
+üzerinden SHARED_KEY_LIMIT kadar (kişi başı) ücretsiz tarama hakkı alır.
+Bu hak `profiles.shared_key_scans_used` sayacıyla takip edilir ve sadece bu
+script (service_role ile, RLS'i bypass ederek) artırabilir — Supabase
+tarafında bir trigger bu sayacın kullanıcı tarafından değiştirilmesini
+engeller (bkz. schema.sql).
+
 Veriler user_id ile izole edilir; kullanıcılar birbirinin verilerini göremez.
 """
 import os
@@ -12,6 +19,11 @@ from supabase import create_client
 from serper_client import search_keyword
 from compare_engine import compare_results, determine_event_type, build_summary
 
+# Kendi key'ini girmeyen her kullanıcının ortak/paylaşımlı deneme key'iyle
+# yapabileceği toplam tarama (run) sayısı. app.js'teki SHARED_KEY_LIMIT ile
+# aynı tutulmalı (orası sadece görüntüleme, gerçek limit burada uygulanır).
+SHARED_KEY_LIMIT = 10
+
 
 def get_client():
     url = os.environ.get("SUPABASE_URL")
@@ -22,16 +34,42 @@ def get_client():
     return create_client(url, key)
 
 
-def get_all_users_with_serper_key(supabase) -> list[dict]:
-    """Serper API key'i kayıtlı tüm kullanıcıları döner."""
+def get_shared_serper_key() -> str | None:
+    """Ortak/paylaşımlı deneme key'i — GitHub Secrets'tan gelir.
+    SHARED_SERPER_API_KEY yoksa eski SERPER_API_KEY secret'ına düşer."""
+    return os.environ.get("SHARED_SERPER_API_KEY") or os.environ.get("SERPER_API_KEY")
+
+
+def get_all_profiles(supabase) -> list[dict]:
+    """Aktif kelimesi olsun olmasın tüm profilleri döner — key kararı
+    (kendi key'i / paylaşımlı key / hiçbiri) burada, koddan sonra verilir."""
     res = (
         supabase.table("profiles")
-        .select("id, serper_api_key")
-        .not_.is_("serper_api_key", "null")
-        .neq("serper_api_key", "")
+        .select("id, serper_api_key, shared_key_scans_used")
         .execute()
     )
     return res.data or []
+
+
+def resolve_api_key(profile: dict, shared_key: str | None) -> tuple[str | None, bool]:
+    """Bu kullanıcı için hangi Serper key'in kullanılacağına karar verir.
+    Döner: (api_key veya None, paylaşımlı_key_mi)."""
+    own_key = (profile.get("serper_api_key") or "").strip()
+    if own_key:
+        return own_key, False
+
+    if shared_key:
+        used = profile.get("shared_key_scans_used") or 0
+        if used < SHARED_KEY_LIMIT:
+            return shared_key, True
+
+    return None, False
+
+
+def increment_shared_key_usage(supabase, user_id: str, current_used: int):
+    supabase.table("profiles").update(
+        {"shared_key_scans_used": (current_used or 0) + 1}
+    ).eq("id", user_id).execute()
 
 
 def get_user_setting(supabase, user_id: str, key: str, default: str) -> str:
@@ -90,8 +128,10 @@ def get_last_snapshot(supabase, user_id: str, keyword: str) -> dict | None:
     return res.data[0] if res.data else None
 
 
-def scan_for_user(supabase, user_id: str, serper_key: str):
-    """Tek bir kullanıcı için tarama yapar."""
+def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
+    """Tek bir kullanıcı için tarama yapar. Taramanın fiilen yapılıp
+    yapılmadığını (True/False) döner — paylaşımlı key kotası sadece
+    gerçekten bir tarama yapıldığında düşülür."""
     short_id = user_id[:8]
 
     # Sıklık kontrolü
@@ -110,12 +150,12 @@ def scan_for_user(supabase, user_id: str, serper_key: str):
                 f"  [{short_id}] Henüz zamanı gelmedi "
                 f"({elapsed_minutes:.1f}/{interval_minutes} dk). Atlanıyor."
             )
-            return
+            return False
 
     keywords = get_user_keywords(supabase, user_id)
     if not keywords:
         print(f"  [{short_id}] Aktif kelime yok, atlanıyor.")
-        return
+        return False
 
     all_changes = []
     run_details = {}
@@ -170,29 +210,52 @@ def scan_for_user(supabase, user_id: str, serper_key: str):
         supabase.table("keyword_snapshots").insert(snap).execute()
 
     print(f"  [{short_id}] Tamamlandı. run_id={run_id} | {summary}")
+    return True
 
 
 def main():
     supabase = get_client()
+    shared_key = get_shared_serper_key()
 
-    users = get_all_users_with_serper_key(supabase)
+    profiles = get_all_profiles(supabase)
 
-    if not users:
-        print("Serper API key'i kayıtlı kullanıcı bulunamadı. Çıkılıyor.")
+    if not profiles:
+        print("Kayıtlı profil bulunamadı. Çıkılıyor.")
         return
 
-    print(f"{len(users)} kullanıcı taranacak.")
+    print(f"{len(profiles)} profil değerlendirilecek.")
 
-    for user in users:
-        user_id = user["id"]
-        serper_key = user["serper_api_key"]
-        print(f"Kullanıcı: {user_id[:8]}…")
+    for profile in profiles:
+        user_id = profile["id"]
+        short_id = user_id[:8]
+
+        api_key, using_shared = resolve_api_key(profile, shared_key)
+        if not api_key:
+            print(
+                f"  [{short_id}] Kendi key'i yok ve paylaşımlı deneme hakkı "
+                f"bitmiş ({profile.get('shared_key_scans_used') or 0}/{SHARED_KEY_LIMIT}). "
+                f"Atlanıyor."
+            )
+            continue
+
+        print(
+            f"Kullanıcı: {short_id}… "
+            + (
+                f"(paylaşımlı deneme key'i — {profile.get('shared_key_scans_used') or 0}/{SHARED_KEY_LIMIT} kullanılmış)"
+                if using_shared
+                else "(kendi key'i)"
+            )
+        )
         try:
-            scan_for_user(supabase, user_id, serper_key)
+            did_scan = scan_for_user(supabase, user_id, api_key)
+            if did_scan and using_shared:
+                increment_shared_key_usage(
+                    supabase, user_id, profile.get("shared_key_scans_used") or 0
+                )
         except Exception as e:
-            print(f"  [{user_id[:8]}] HATA: {e}", file=sys.stderr)
+            print(f"  [{short_id}] HATA: {e}", file=sys.stderr)
 
-    print("Tüm kullanıcılar işlendi.")
+    print("Tüm profiller işlendi.")
 
 
 if __name__ == "__main__":

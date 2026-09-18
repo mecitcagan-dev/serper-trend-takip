@@ -10,6 +10,12 @@ const EVENT_META = {
 	degisiklik_yok: { icon: '🔍', label: 'Rutin Tarama' },
 };
 
+// Kendi key'ini girmeyen kullanıcılar için ortak/paylaşımlı deneme key'inin
+// kişi başı hakkı. scan.py içindeki SHARED_KEY_LIMIT ile aynı olmalı —
+// gerçek sayaç ve limit uygulaması orada (sunucu tarafında) yapılıyor,
+// burası sadece görüntüleme içindir.
+const SHARED_KEY_LIMIT = 10;
+
 let allRuns = [];
 let currentFilter = 'all';
 let selectedRunId = null;
@@ -81,21 +87,41 @@ document.addEventListener('click', (e) => {
 
 async function checkSerperKey() {
 	if (!currentUser) return;
+	const banner = document.getElementById('serperKeyBanner');
+	const bannerText = document.getElementById('serperBannerText');
+	const bannerBtn = document.getElementById('serperBannerBtn');
+	if (!banner) return;
 	try {
 		const { data } = await sb
 			.from('profiles')
-			.select('serper_api_key')
+			.select('serper_api_key, shared_key_scans_used')
 			.eq('id', currentUser.id)
 			.single();
-		const banner = document.getElementById('serperKeyBanner');
-		if (!banner) return;
-		if (!data?.serper_api_key) {
-			banner.classList.remove('hidden');
-		} else {
+
+		const hasOwnKey = !!data?.serper_api_key;
+		const remaining = Math.max(
+			0,
+			SHARED_KEY_LIMIT - (data?.shared_key_scans_used || 0),
+		);
+
+		if (hasOwnKey) {
 			banner.classList.add('hidden');
+		} else if (remaining > 0) {
+			banner.classList.remove('hidden');
+			banner.classList.add('info');
+			bannerText.textContent = `🎁 Ücretsiz deneme modundasın — ${remaining}/${SHARED_KEY_LIMIT} tarama hakkın kaldı.`;
+			bannerBtn.textContent = "Kendi Key'imi Ekle";
+		} else {
+			banner.classList.remove('hidden');
+			banner.classList.remove('info');
+			bannerText.textContent =
+				"⚠️ Ücretsiz tarama hakkın bitti — devam etmek için kendi Serper API key'ini eklemen gerekiyor.";
+			bannerBtn.textContent = 'Key Ekle';
 		}
 	} catch {
 		// profil henüz oluşturulmamış olabilir, sorun değil
+		banner.classList.remove('hidden');
+		banner.classList.remove('info');
 	}
 }
 
@@ -678,18 +704,36 @@ async function openSettingsModal() {
 	document.getElementById('settingsSaveStatus').textContent = '';
 	if (!currentUser) return;
 
-	// Serper key yükle
+	const quotaBadge = document.getElementById('sharedQuotaBadge');
+
+	// Serper key + paylaşımlı kota bilgisi yükle
 	try {
 		const { data: profile } = await sb
 			.from('profiles')
-			.select('serper_api_key')
+			.select('serper_api_key, shared_key_scans_used')
 			.eq('id', currentUser.id)
 			.single();
 		if (profile?.serper_api_key) {
 			document.getElementById('serperKeyInput').value = profile.serper_api_key;
 		}
+
+		const hasOwnKey = !!profile?.serper_api_key;
+		const remaining = Math.max(
+			0,
+			SHARED_KEY_LIMIT - (profile?.shared_key_scans_used || 0),
+		);
+		if (quotaBadge) {
+			if (!hasOwnKey && remaining > 0) {
+				quotaBadge.classList.remove('hidden');
+				quotaBadge.classList.toggle('low', remaining <= 3);
+				quotaBadge.textContent = `🎁 Kendi key'ini girmezsen ortak deneme key'i kullanılır — ${remaining}/${SHARED_KEY_LIMIT} tarama hakkın kaldı.`;
+			} else {
+				quotaBadge.classList.add('hidden');
+			}
+		}
 	} catch {
 		/* profil henüz yok */
+		quotaBadge?.classList.add('hidden');
 	}
 
 	// Tarama sıklığı yükle (RLS filtreli)

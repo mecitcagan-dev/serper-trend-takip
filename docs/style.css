@@ -252,6 +252,14 @@ body {
 .serper-banner-btn:hover {
 	opacity: 0.88;
 }
+.serper-banner.info {
+	background: var(--accent-soft);
+	border-color: rgba(61, 109, 242, 0.32);
+}
+.serper-banner.info .serper-banner-btn {
+	background: var(--accent);
+	color: #ffffff;
+}
 
 .tabs {
 	display: flex;
@@ -476,7 +484,62 @@ body {
 	font-size: 12.5px;
 	line-height: 1.55;
 	color: var(--text-secondary);
-	margin: 0 0 14px;
+	margin: 8px 0 14px;
+}
+.settings-section .settings-input + .modal-hint {
+	margin-bottom: 0;
+}
+
+/* ----- Ayarlar modalı: bölüm/etiket/input ----- */
+.settings-section {
+	margin-bottom: 22px;
+}
+.settings-section:last-child {
+	margin-bottom: 0;
+}
+.settings-section-label {
+	display: block;
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--text-primary);
+	margin-bottom: 9px;
+}
+.settings-input {
+	display: block;
+	width: 100%;
+	padding: 10px 11px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--bg-rail);
+	color: var(--text-primary);
+	font-family: inherit;
+	font-size: 13.5px;
+}
+.settings-input::placeholder {
+	color: var(--text-tertiary);
+}
+.settings-input:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+
+.quota-badge {
+	display: block;
+	margin-top: 10px;
+	padding: 9px 12px;
+	border-radius: 8px;
+	background: var(--accent-soft);
+	color: var(--accent);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.5;
+}
+.quota-badge.hidden {
+	display: none;
+}
+.quota-badge.low {
+	background: rgba(245, 166, 35, 0.14);
+	color: #d9843b;
 }
 
 .keyword-list {

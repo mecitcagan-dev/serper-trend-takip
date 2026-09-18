@@ -145,3 +145,34 @@ grant select, insert, update on public.profiles to authenticated;
 -- bu RLS'i otomatik bypass eder (bypassrls). Yukarıdaki kurallar sadece
 -- giriş yapmış frontend kullanıcıları içindir — her kullanıcı sadece
 -- kendi user_id'siyle eşleşen satırları görür/değiştirir.
+
+-- =============================================================
+-- v3: Ortak/paylaşımlı deneme Serper key'i — kişi başı 10 tarama hakkı
+-- =============================================================
+
+-- Kendi key'ini girmemiş kullanıcılar için, scan.py'nin kaç kez ortak
+-- deneme key'ini kullandığını sayar. Varsayılan limit (10) scan.py ve
+-- app.js içinde SHARED_KEY_LIMIT olarak tanımlı.
+alter table profiles add column if not exists shared_key_scans_used int not null default 0;
+
+-- Bu sayaç SADECE scan.py'nin kullandığı service_role tarafından
+-- artırılmalı. "user_own_profile_update" politikası kullanıcının kendi
+-- satırını güncellemesine izin verdiğinden (kolon bazlı kısıtlama RLS'te
+-- doğrudan mümkün olmadığından), bir trigger ile service_role dışındaki
+-- her güncellemede bu kolonu eski değerine sabitliyoruz — yani kullanıcı
+-- tarayıcıdan bu sayacı sıfırlayıp hakkını yenileyemez.
+create or replace function protect_shared_key_scans_used()
+returns trigger as $$
+begin
+  if auth.role() <> 'service_role'
+     and new.shared_key_scans_used is distinct from old.shared_key_scans_used then
+    new.shared_key_scans_used := old.shared_key_scans_used;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists trg_protect_shared_key_scans_used on profiles;
+create trigger trg_protect_shared_key_scans_used
+  before update on profiles
+  for each row execute function protect_shared_key_scans_used();
