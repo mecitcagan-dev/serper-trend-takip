@@ -148,264 +148,6 @@ grant select, insert, update, delete on public.keywords to service_role;
 grant select, insert, update, delete on public.runs to service_role;
 grant select, insert, update, delete on public.keyword_snapshots to service_role;
 
--- =============================================================
--- v7: Hedef domain sıra takibi
--- =============================================================
-
--- Proje hedefi varsayılan değerdir; bir kelime gerektiğinde kendi hedefini
--- (ör. farklı landing page veya alt domain) kullanabilir.
-alter table keywords add column if not exists target_domain text;
-create index if not exists idx_keywords_project_active
-  on public.keywords(project_id, active);
-
--- =============================================================
--- v8: Arama pazarı ve cihaz ayarları
--- =============================================================
-
-alter table projects add column if not exists country_code text not null default 'tr';
-alter table projects add column if not exists language_code text not null default 'tr';
-alter table projects add column if not exists location text;
-alter table projects add column if not exists device text not null default 'desktop';
-
--- =============================================================
--- v9: Google Search Console proje mülkü
--- =============================================================
-
--- OAuth access token tutulmaz; yalnızca kullanıcının seçtiği mülk adresi
--- proje bağlamında saklanır. Token tarayıcı oturumu içinde geçici kalır.
-alter table projects add column if not exists gsc_site_url text;
-
--- =============================================================
--- v10: Ücretsiz GEO/AI görünürlük kanıt kayıtları
--- =============================================================
-
--- Ücretli bir AI API'sine otomatik istek atılmaz. Kullanıcı, ChatGPT/Gemini
--- gibi izinli bir arayüzde yaptığı kontrolün kanıtını buraya kaydeder.
-create table if not exists geo_checks (
-  id bigint generated always as identity primary key,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  project_id bigint not null references public.projects(id) on delete cascade,
-  prompt text not null,
-  source text not null default 'manual',
-  answer_excerpt text not null default '',
-  brand_mentioned boolean not null default false,
-  competitor_mentions text not null default '',
-  cited_domains text not null default '',
-  notes text not null default '',
-  checked_at timestamptz not null default now(),
-  created_at timestamptz not null default now()
-);
-
-alter table geo_checks enable row level security;
-drop policy if exists "users_own_geo_checks_select" on geo_checks;
-drop policy if exists "users_own_geo_checks_insert" on geo_checks;
-drop policy if exists "users_own_geo_checks_update" on geo_checks;
-drop policy if exists "users_own_geo_checks_delete" on geo_checks;
-
-create policy "users_own_geo_checks_select" on geo_checks
-  for select to authenticated using (
-    user_id = auth.uid()
-    and exists (
-      select 1 from public.projects p
-      where p.id = geo_checks.project_id and p.user_id = auth.uid()
-    )
-  );
-create policy "users_own_geo_checks_insert" on geo_checks
-  for insert to authenticated with check (
-    user_id = auth.uid()
-    and exists (
-      select 1 from public.projects p
-      where p.id = geo_checks.project_id and p.user_id = auth.uid()
-    )
-  );
-create policy "users_own_geo_checks_update" on geo_checks
-  for update to authenticated using (
-    user_id = auth.uid()
-    and exists (
-      select 1 from public.projects p
-      where p.id = geo_checks.project_id and p.user_id = auth.uid()
-    )
-  ) with check (
-    user_id = auth.uid()
-    and exists (
-      select 1 from public.projects p
-      where p.id = geo_checks.project_id and p.user_id = auth.uid()
-    )
-  );
-create policy "users_own_geo_checks_delete" on geo_checks
-  for delete to authenticated using (
-    user_id = auth.uid()
-    and exists (
-      select 1 from public.projects p
-      where p.id = geo_checks.project_id and p.user_id = auth.uid()
-    )
-  );
-
-grant select, insert, update, delete on public.geo_checks to authenticated;
-grant select, insert, update, delete on public.geo_checks to service_role;
-grant usage on all sequences in schema public to service_role;
-create index if not exists idx_geo_checks_project_checked_at
-  on public.geo_checks(project_id, checked_at desc);
-
--- =============================================================
--- v11: Eşzamanlı tarama kilidi
--- =============================================================
-
-create table if not exists scan_leases (
-  project_id bigint primary key references public.projects(id) on delete cascade,
-  locked_until timestamptz not null,
-  acquired_at timestamptz not null default now()
-);
-
-grant select, insert, update, delete on public.scan_leases to service_role;
-
-create or replace function public.acquire_scan_lease(
-  p_project_id bigint,
-  p_lease_seconds integer default 300
-)
-returns boolean
-language sql
-security definer
-set search_path = public
-as $$
-  insert into public.scan_leases(project_id, locked_until, acquired_at)
-  values (p_project_id, now() + make_interval(secs => p_lease_seconds), now())
-  on conflict (project_id) do update
-    set locked_until = excluded.locked_until,
-        acquired_at = excluded.acquired_at
-    where scan_leases.locked_until <= now()
-  returning true;
-$$;
-
-grant execute on function public.acquire_scan_lease(bigint, integer) to service_role;
-
--- =============================================================
--- v12: Rol temeli ve audit kaydı
--- =============================================================
-
-alter table profiles add column if not exists role text not null default 'admin';
-alter table profiles drop constraint if exists profiles_role_check;
-alter table profiles add constraint profiles_role_check
-  check (role in ('admin', 'team_member', 'client_viewer'));
-
-create or replace function public.protect_profile_role()
-returns trigger as $$
-begin
-  if auth.role() <> 'service_role'
-     and new.role is distinct from old.role then
-    new.role := old.role;
-  end if;
-  return new;
-end;
-$$ language plpgsql security definer set search_path = public;
-
-drop trigger if exists trg_protect_profile_role on profiles;
-create trigger trg_protect_profile_role
-  before update on profiles
-  for each row execute function public.protect_profile_role();
-
-create table if not exists audit_logs (
-  id bigint generated always as identity primary key,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  project_id bigint references public.projects(id) on delete set null,
-  action text not null,
-  metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);
-
-alter table audit_logs enable row level security;
-drop policy if exists "users_own_audit_select" on audit_logs;
-drop policy if exists "users_own_audit_insert" on audit_logs;
-
-create policy "users_own_audit_select" on audit_logs
-  for select to authenticated using (user_id = auth.uid());
-create policy "users_own_audit_insert" on audit_logs
-  for insert to authenticated with check (
-    user_id = auth.uid()
-    and (
-      project_id is null
-      or exists (
-        select 1 from public.projects p
-        where p.id = audit_logs.project_id and p.user_id = auth.uid()
-      )
-    )
-  );
-
-grant select, insert on public.audit_logs to authenticated;
-grant select, insert on public.audit_logs to service_role;
-create index if not exists idx_audit_logs_user_project_created
-  on public.audit_logs(user_id, project_id, created_at desc);
-
--- =============================================================
--- v13: Salt-okunur müşteri rolünün veritabanı koruması
--- =============================================================
-
-create or replace function public.user_can_write()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select coalesce(
-    (select role <> 'client_viewer' from public.profiles where id = auth.uid()),
-    true
-  );
-$$;
-
-grant execute on function public.user_can_write() to authenticated;
-
-drop policy if exists "users_own_projects_insert" on projects;
-drop policy if exists "users_own_projects_update" on projects;
-drop policy if exists "users_own_projects_delete" on projects;
-create policy "users_own_projects_insert" on projects
-  for insert to authenticated with check (user_id = auth.uid() and public.user_can_write());
-create policy "users_own_projects_update" on projects
-  for update to authenticated using (user_id = auth.uid() and public.user_can_write())
-  with check (user_id = auth.uid() and public.user_can_write());
-create policy "users_own_projects_delete" on projects
-  for delete to authenticated using (user_id = auth.uid() and public.user_can_write());
-
-drop policy if exists "user_insert_keywords" on keywords;
-drop policy if exists "user_update_keywords" on keywords;
-drop policy if exists "user_delete_keywords" on keywords;
-create policy "user_insert_keywords" on keywords
-  for insert to authenticated with check (user_id = auth.uid() and public.user_can_write());
-create policy "user_update_keywords" on keywords
-  for update to authenticated using (user_id = auth.uid() and public.user_can_write())
-  with check (user_id = auth.uid() and public.user_can_write());
-create policy "user_delete_keywords" on keywords
-  for delete to authenticated using (user_id = auth.uid() and public.user_can_write());
-
-drop policy if exists "user_insert_settings" on settings;
-drop policy if exists "user_update_settings" on settings;
-create policy "user_insert_settings" on settings
-  for insert to authenticated with check (user_id = auth.uid() and public.user_can_write());
-create policy "user_update_settings" on settings
-  for update to authenticated using (user_id = auth.uid() and public.user_can_write())
-  with check (user_id = auth.uid() and public.user_can_write());
-
-drop policy if exists "users_own_profile_update" on profiles;
-create policy "users_own_profile_update" on profiles
-  for update to authenticated using (id = auth.uid() and public.user_can_write())
-  with check (id = auth.uid() and public.user_can_write());
-
-drop policy if exists "users_own_geo_checks_insert" on geo_checks;
-drop policy if exists "users_own_geo_checks_update" on geo_checks;
-drop policy if exists "users_own_geo_checks_delete" on geo_checks;
-create policy "users_own_geo_checks_insert" on geo_checks
-  for insert to authenticated with check (
-    user_id = auth.uid() and public.user_can_write()
-    and exists (select 1 from public.projects p where p.id = geo_checks.project_id and p.user_id = auth.uid())
-  );
-create policy "users_own_geo_checks_update" on geo_checks
-  for update to authenticated using (user_id = auth.uid() and public.user_can_write())
-  with check (
-    user_id = auth.uid() and public.user_can_write()
-    and exists (select 1 from public.projects p where p.id = geo_checks.project_id and p.user_id = auth.uid())
-  );
-create policy "users_own_geo_checks_delete" on geo_checks
-  for delete to authenticated using (user_id = auth.uid() and public.user_can_write());
 grant select, insert, update, delete on public.settings to service_role;
 grant usage on all sequences in schema public to service_role;
 
@@ -673,3 +415,268 @@ create policy "user_select_snapshots" on keyword_snapshots
 grant select, insert, update, delete on public.keywords to service_role;
 grant select, insert, update, delete on public.runs to service_role;
 grant select, insert, update, delete on public.keyword_snapshots to service_role;
+
+-- =============================================================
+-- v7: Hedef domain sıra takibi
+-- =============================================================
+
+alter table keywords add column if not exists target_domain text;
+create index if not exists idx_keywords_project_active
+  on public.keywords(project_id, active);
+
+-- =============================================================
+-- v8: Arama pazarı ve cihaz ayarları
+-- =============================================================
+
+alter table projects add column if not exists country_code text not null default 'tr';
+alter table projects add column if not exists language_code text not null default 'tr';
+alter table projects add column if not exists location text;
+alter table projects add column if not exists device text not null default 'desktop';
+
+-- =============================================================
+-- v9: Google Search Console proje mülkü
+-- =============================================================
+
+alter table projects add column if not exists gsc_site_url text;
+
+-- =============================================================
+-- v10: Ücretsiz GEO/AI görünürlük kanıt kayıtları
+-- =============================================================
+
+create table if not exists geo_checks (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  project_id bigint not null references public.projects(id) on delete cascade,
+  prompt text not null,
+  source text not null default 'manual',
+  answer_excerpt text not null default '',
+  brand_mentioned boolean not null default false,
+  competitor_mentions text not null default '',
+  cited_domains text not null default '',
+  notes text not null default '',
+  checked_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
+alter table geo_checks enable row level security;
+drop policy if exists "users_own_geo_checks_select" on geo_checks;
+drop policy if exists "users_own_geo_checks_insert" on geo_checks;
+drop policy if exists "users_own_geo_checks_update" on geo_checks;
+drop policy if exists "users_own_geo_checks_delete" on geo_checks;
+
+create policy "users_own_geo_checks_select" on geo_checks
+  for select to authenticated using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "users_own_geo_checks_insert" on geo_checks
+  for insert to authenticated with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "users_own_geo_checks_update" on geo_checks
+  for update to authenticated using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  ) with check (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  );
+create policy "users_own_geo_checks_delete" on geo_checks
+  for delete to authenticated using (
+    user_id = auth.uid()
+    and exists (
+      select 1 from public.projects p
+      where p.id = geo_checks.project_id and p.user_id = auth.uid()
+    )
+  );
+
+grant select, insert, update, delete on public.geo_checks to authenticated;
+grant select, insert, update, delete on public.geo_checks to service_role;
+grant usage on all sequences in schema public to service_role;
+create index if not exists idx_geo_checks_project_checked_at
+  on public.geo_checks(project_id, checked_at desc);
+
+-- =============================================================
+-- v11: Eşzamanlı tarama kilidi
+-- =============================================================
+
+create table if not exists scan_leases (
+  project_id bigint primary key references public.projects(id) on delete cascade,
+  locked_until timestamptz not null,
+  acquired_at timestamptz not null default now()
+);
+
+grant select, insert, update, delete on public.scan_leases to service_role;
+
+create or replace function public.acquire_scan_lease(
+  p_project_id bigint,
+  p_lease_seconds integer default 300
+)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.scan_leases(project_id, locked_until, acquired_at)
+  values (p_project_id, now() + make_interval(secs => p_lease_seconds), now())
+  on conflict (project_id) do update
+    set locked_until = excluded.locked_until,
+        acquired_at = excluded.acquired_at
+    where scan_leases.locked_until <= now()
+  returning true;
+$$;
+
+grant execute on function public.acquire_scan_lease(bigint, integer) to service_role;
+
+-- =============================================================
+-- v12: Rol temeli ve audit kaydı
+-- =============================================================
+
+alter table profiles add column if not exists role text not null default 'admin';
+alter table profiles drop constraint if exists profiles_role_check;
+alter table profiles add constraint profiles_role_check
+  check (role in ('admin', 'team_member', 'client_viewer'));
+
+create or replace function public.protect_profile_role()
+returns trigger as $$
+begin
+  if auth.role() <> 'service_role'
+     and new.role is distinct from old.role then
+    new.role := old.role;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+drop trigger if exists trg_protect_profile_role on profiles;
+create trigger trg_protect_profile_role
+  before update on profiles
+  for each row execute function public.protect_profile_role();
+
+create table if not exists audit_logs (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  project_id bigint references public.projects(id) on delete set null,
+  action text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table audit_logs enable row level security;
+drop policy if exists "users_own_audit_select" on audit_logs;
+drop policy if exists "users_own_audit_insert" on audit_logs;
+
+create policy "users_own_audit_select" on audit_logs
+  for select to authenticated using (user_id = auth.uid());
+create policy "users_own_audit_insert" on audit_logs
+  for insert to authenticated with check (
+    user_id = auth.uid()
+    and (
+      project_id is null
+      or exists (
+        select 1 from public.projects p
+        where p.id = audit_logs.project_id and p.user_id = auth.uid()
+      )
+    )
+  );
+
+grant select, insert on public.audit_logs to authenticated;
+grant select, insert on public.audit_logs to service_role;
+create index if not exists idx_audit_logs_user_project_created
+  on public.audit_logs(user_id, project_id, created_at desc);
+
+-- =============================================================
+-- v13: Salt-okunur müşteri rolünün veritabanı koruması
+-- =============================================================
+
+create or replace function public.user_can_write()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select role <> 'client_viewer' from public.profiles where id = auth.uid()),
+    true
+  );
+$$;
+
+grant execute on function public.user_can_write() to authenticated;
+
+drop policy if exists "users_own_projects_insert" on projects;
+drop policy if exists "users_own_projects_update" on projects;
+drop policy if exists "users_own_projects_delete" on projects;
+create policy "users_own_projects_insert" on projects
+  for insert to authenticated with check (user_id = auth.uid() and public.user_can_write());
+create policy "users_own_projects_update" on projects
+  for update to authenticated using (user_id = auth.uid() and public.user_can_write())
+  with check (user_id = auth.uid() and public.user_can_write());
+create policy "users_own_projects_delete" on projects
+  for delete to authenticated using (user_id = auth.uid() and public.user_can_write());
+
+drop policy if exists "user_insert_keywords" on keywords;
+drop policy if exists "user_update_keywords" on keywords;
+drop policy if exists "user_delete_keywords" on keywords;
+create policy "user_insert_keywords" on keywords
+  for insert to authenticated with check (
+    user_id = auth.uid() and public.user_can_write()
+    and exists (select 1 from public.projects p where p.id = keywords.project_id and p.user_id = auth.uid())
+  );
+create policy "user_update_keywords" on keywords
+  for update to authenticated using (
+    user_id = auth.uid() and public.user_can_write()
+    and exists (select 1 from public.projects p where p.id = keywords.project_id and p.user_id = auth.uid())
+  )
+  with check (
+    user_id = auth.uid() and public.user_can_write()
+    and exists (select 1 from public.projects p where p.id = keywords.project_id and p.user_id = auth.uid())
+  );
+create policy "user_delete_keywords" on keywords
+  for delete to authenticated using (
+    user_id = auth.uid() and public.user_can_write()
+    and exists (select 1 from public.projects p where p.id = keywords.project_id and p.user_id = auth.uid())
+  );
+
+drop policy if exists "user_insert_settings" on settings;
+drop policy if exists "user_update_settings" on settings;
+create policy "user_insert_settings" on settings
+  for insert to authenticated with check (user_id = auth.uid() and public.user_can_write());
+create policy "user_update_settings" on settings
+  for update to authenticated using (user_id = auth.uid() and public.user_can_write())
+  with check (user_id = auth.uid() and public.user_can_write());
+
+drop policy if exists "users_own_profile_update" on profiles;
+create policy "users_own_profile_update" on profiles
+  for update to authenticated using (id = auth.uid() and public.user_can_write())
+  with check (id = auth.uid() and public.user_can_write());
+
+drop policy if exists "users_own_geo_checks_insert" on geo_checks;
+drop policy if exists "users_own_geo_checks_update" on geo_checks;
+drop policy if exists "users_own_geo_checks_delete" on geo_checks;
+create policy "users_own_geo_checks_insert" on geo_checks
+  for insert to authenticated with check (
+    user_id = auth.uid() and public.user_can_write()
+    and exists (select 1 from public.projects p where p.id = geo_checks.project_id and p.user_id = auth.uid())
+  );
+create policy "users_own_geo_checks_update" on geo_checks
+  for update to authenticated using (user_id = auth.uid() and public.user_can_write())
+  with check (
+    user_id = auth.uid() and public.user_can_write()
+    and exists (select 1 from public.projects p where p.id = geo_checks.project_id and p.user_id = auth.uid())
+  );
+create policy "users_own_geo_checks_delete" on geo_checks
+  for delete to authenticated using (user_id = auth.uid() and public.user_can_write());
