@@ -147,6 +147,16 @@ grant select, insert, update, delete on public.profiles to service_role;
 grant select, insert, update, delete on public.keywords to service_role;
 grant select, insert, update, delete on public.runs to service_role;
 grant select, insert, update, delete on public.keyword_snapshots to service_role;
+
+-- =============================================================
+-- v7: Hedef domain sıra takibi
+-- =============================================================
+
+-- Proje hedefi varsayılan değerdir; bir kelime gerektiğinde kendi hedefini
+-- (ör. farklı landing page veya alt domain) kullanabilir.
+alter table keywords add column if not exists target_domain text;
+create index if not exists idx_keywords_project_active
+  on public.keywords(project_id, active);
 grant select, insert, update, delete on public.settings to service_role;
 grant usage on all sequences in schema public to service_role;
 

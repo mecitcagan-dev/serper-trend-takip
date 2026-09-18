@@ -36,7 +36,7 @@ tarama sorguları ve RLS kuralları eklendi; Python ve JavaScript statik kontrol
 geçti. Canlı kabul için Supabase SQL Editor'de `schema.sql` içindeki v6 bölümü
 bir kez çalıştırılmalı ve iki proje ile kısa bir manuel izolasyon testi yapılmalı.
 
-### 2. Hedef domain ve gerçek sıra takibi
+### 2. Hedef domain ve gerçek sıra takibi — Kod hazır
 
 - Proje için hedef domain tanımlanacak; gerekirse kelime bazında override
   edilebilecek.
@@ -47,6 +47,11 @@ bir kez çalıştırılmalı ve iki proje ile kısa bir manuel izolasyon testi y
 
 **Tamamlanma ölçütü:** Bir proje ekranında her kelime için hedef domainin
 mevcut sırası, önceki sırası ve yönü doğru görüntülenmeli.
+
+**Kontrol:** Proje hedef domaini, kelime bazlı override alanı, ilk 10 pozisyonu
+ve yön bilgisi eklendi. İlk ölçüm baz olarak işaretleniyor; domain ilk 10 dışına
+çıktığında ayrıca gösteriliyor. Karşılaştırma motoru için 3 otomatik test ve
+Python/JavaScript statik kontrolleri geçti.
 
 ### 3. Arama pazarı ve cihaz ayarları
 

@@ -30,6 +30,7 @@ export async function openKeywordModal() {
 			id: k.id,
 			keyword: k.keyword,
 			active: k.active,
+			targetDomain: k.target_domain || '',
 		}));
 	}
 	renderKeywordList();
@@ -42,11 +43,17 @@ function renderKeywordList() {
 		const li = document.createElement('li');
 		li.className = 'keyword-item';
 		li.innerHTML = `
-      <label class="keyword-active">
+      <div class="keyword-row-main">
+        <label class="keyword-active">
         <input type="checkbox" ${item.active ? 'checked' : ''} data-idx="${idx}" class="active-toggle">
+        </label>
+        <span class="keyword-text">${escapeHtml(item.keyword)}</span>
+        <button class="remove-btn" data-idx="${idx}">Sil</button>
+      </div>
+      <label class="keyword-target-label">
+        Hedef domain override
+        <input class="keyword-target-domain" data-idx="${idx}" value="${escapeHtml(item.targetDomain || '')}" placeholder="Proje hedefini kullan">
       </label>
-      <span class="keyword-text">${escapeHtml(item.keyword)}</span>
-      <button class="remove-btn" data-idx="${idx}">Sil</button>
     `;
 		list.appendChild(li);
 	});
@@ -60,6 +67,12 @@ function renderKeywordList() {
 		btn.addEventListener('click', (e) => {
 			state.keywordWorkingList.splice(+e.target.dataset.idx, 1);
 			renderKeywordList();
+		});
+	});
+	list.querySelectorAll('.keyword-target-domain').forEach((input) => {
+		input.addEventListener('input', (event) => {
+			state.keywordWorkingList[+event.target.dataset.idx].targetDomain =
+				event.target.value.trim();
 		});
 	});
 }
@@ -89,7 +102,12 @@ function addKeywordsFromTextarea() {
 			skipped++;
 			return;
 		}
-		state.keywordWorkingList.push({ id: null, keyword: kw, active: true });
+		state.keywordWorkingList.push({
+			id: null,
+			keyword: kw,
+			active: true,
+			targetDomain: '',
+		});
 		existingLower.add(lower);
 		added++;
 	});
@@ -127,7 +145,11 @@ async function saveKeywords() {
 		for (const k of toUpdate) {
 			await sb
 				.from('keywords')
-				.update({ keyword: k.keyword, active: k.active })
+				.update({
+					keyword: k.keyword,
+					active: k.active,
+					target_domain: k.targetDomain || null,
+				})
 				.eq('id', k.id);
 		}
 		if (toInsert.length) {
@@ -137,6 +159,7 @@ async function saveKeywords() {
 					active: k.active,
 					user_id: state.currentUser.id,
 					project_id: state.currentProject.id,
+					target_domain: k.targetDomain || null,
 				})),
 			);
 		}

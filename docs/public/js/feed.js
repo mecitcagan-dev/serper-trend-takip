@@ -139,6 +139,25 @@ export function renderDetail(run) {
 		keywords.forEach((kw) => {
 			const d = details[kw];
 			bodyHtml += `<div class="detail-keyword-block"><h3>${escapeHtml(kw)}</h3>`;
+			if (d.target_domain) {
+				const currentRank = d.target_position
+					? `#${d.target_position}`
+					: 'İlk 10 dışında';
+				const previousRank = d.previous_target_position
+					? `#${d.previous_target_position}`
+					: 'İlk 10 dışında';
+				const directionLabels = {
+					improved: 'Yükseldi',
+					declined: 'Geriledi',
+					entered: 'İlk 10’a girdi',
+					left: 'İlk 10’dan çıktı',
+					unchanged: 'Değişmedi',
+					not_in_top_10: 'İlk 10 dışında',
+					baseline: 'İlk ölçüm',
+				};
+				const direction = directionLabels[d.target_direction] || d.target_direction;
+				bodyHtml += `<p class="detail-target-rank"><strong>Hedef sıra:</strong> ${currentRank} · önceki ${previousRank} · ${escapeHtml(direction)}<br><span class="detail-muted">${escapeHtml(d.target_domain)}</span></p>`;
+			}
 			if (d.error) {
 				bodyHtml += `<p class="detail-error">Hata: ${escapeHtml(d.error)}</p>`;
 			} else if (d.first_run) {

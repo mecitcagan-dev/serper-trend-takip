@@ -10,6 +10,9 @@ engeller (bkz. schema.sql).
 
 Veriler user_id ile izole edilir; kullanıcılar birbirinin verilerini göremez.
 """
+
+from __future__ import annotations
+
 import os
 import sys
 import datetime
@@ -57,7 +60,7 @@ def get_all_projects(supabase) -> list[dict]:
     user_id üzerinden ayrıca korunur."""
     res = (
         supabase.table("projects")
-        .select("id, user_id, name, is_active")
+        .select("id, user_id, name, target_domain, is_active")
         .order("id")
         .execute()
     )
@@ -118,16 +121,16 @@ def get_user_last_run_time(supabase, user_id: str, project_id: int):
     return datetime.datetime.fromisoformat(raw)
 
 
-def get_user_keywords(supabase, user_id: str, project_id: int) -> list[str]:
+def get_user_keywords(supabase, user_id: str, project_id: int) -> list[dict]:
     res = (
         supabase.table("keywords")
-        .select("keyword")
+        .select("keyword, target_domain")
         .eq("user_id", user_id)
         .eq("project_id", project_id)
         .eq("active", True)
         .execute()
     )
-    return [row["keyword"] for row in res.data]
+    return res.data or []
 
 
 def get_last_snapshot(
@@ -151,6 +154,7 @@ def scan_for_project(
     user_id: str,
     project_id: int,
     project_name: str,
+    project_target_domain: str | None,
     serper_key: str,
 ) -> bool:
     """Tek bir proje için tarama yapar. Taramanın fiilen yapılıp
@@ -186,7 +190,11 @@ def scan_for_project(
     run_details = {}
     new_snapshots = []
 
-    for kw in keywords:
+    for keyword_config in keywords:
+        kw = keyword_config["keyword"]
+        target_domain = (
+            keyword_config.get("target_domain") or project_target_domain or ""
+        ).strip()
         print(f"  [{project_label}] Taranıyor: {kw}")
         try:
             new_result = search_keyword(kw, serper_key)
@@ -196,7 +204,7 @@ def scan_for_project(
             continue
 
         old_snapshot = get_last_snapshot(supabase, user_id, project_id, kw)
-        changes = compare_results(old_snapshot, new_result)
+        changes = compare_results(old_snapshot, new_result, target_domain)
         run_details[kw] = changes
 
         if changes.get("has_changes"):
@@ -306,6 +314,7 @@ def main():
                     user_id,
                     project["id"],
                     project["name"],
+                    project.get("target_domain"),
                     api_key,
                 )
                 if did_scan and using_shared:

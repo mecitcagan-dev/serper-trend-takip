@@ -203,6 +203,16 @@
 								>
 									+
 								</button>
+								<button
+									class="project-add-btn"
+									id="editProjectBtn"
+									type="button"
+									aria-label="Seçili projeyi düzenle"
+									title="Seçili projeyi düzenle"
+									disabled
+								>
+									✎
+								</button>
 							</div>
 							<div class="project-meta" id="projectMeta">Proje yükleniyor…</div>
 							<div class="project-status" id="projectStatus"></div>
@@ -394,7 +404,7 @@
 							>Tarama Sıklığı</label
 						>
 						<p class="modal-hint">
-							Otomasyon her saat başı kontrol ediyor, ama gerçek taramayı sadece
+							Otomasyon yaklaşık 5 dakikada bir kontrol ediyor, ama gerçek taramayı sadece
 							burada seçtiğin süre geçtiyse yapıyor. Serper.dev kotanı korumak
 							için test dışında 6 saatin altına inmemeni öneririz.
 						</p>
@@ -423,7 +433,7 @@
 		<div class="modal-overlay" id="projectModalOverlay">
 			<div class="modal">
 				<div class="modal-header">
-					<h2>Yeni Proje</h2>
+					<h2 id="projectModalTitle">Yeni Proje</h2>
 					<button
 						class="icon-btn"
 						id="closeProjectModalBtn"
@@ -475,7 +485,7 @@
 					</div>
 					<div class="modal-footer">
 						<span class="save-status" id="projectSaveStatus"></span>
-						<button class="save-btn" type="submit">Kaydet</button>
+						<button class="save-btn" id="projectSaveBtn" type="submit">Kaydet</button>
 					</div>
 				</form>
 			</div>

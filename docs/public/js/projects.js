@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { escapeHtml } from './utils.js';
 
 let onProjectChange = () => {};
+let editingProjectId = null;
 
 function setProjectStatus(message, isError = false) {
 	const status = document.getElementById('projectStatus');
@@ -39,6 +40,8 @@ function renderProjectPicker() {
 	}
 
 	select.disabled = !state.projects.length;
+	const editButton = document.getElementById('editProjectBtn');
+	if (editButton) editButton.disabled = !state.currentProject;
 }
 
 export async function loadProjects({ notify = true } = {}) {
@@ -75,14 +78,27 @@ export async function loadProjects({ notify = true } = {}) {
 	return !!state.currentProject;
 }
 
-function openProjectModal() {
+function openProjectModal(project = null) {
+	editingProjectId = project?.id || null;
 	document.getElementById('projectModalOverlay')?.classList.add('open');
-	document.getElementById('projectForm')?.reset();
+	const form = document.getElementById('projectForm');
+	form?.reset();
+	document.getElementById('projectModalTitle').textContent = project
+		? 'Projeyi Düzenle'
+		: 'Yeni Proje';
+	if (project) {
+		document.getElementById('projectNameInput').value = project.name || '';
+		document.getElementById('projectClientInput').value =
+			project.client_name || '';
+		document.getElementById('projectDomainInput').value =
+			project.target_domain || '';
+	}
 	document.getElementById('projectSaveStatus').textContent = '';
 }
 
 function closeProjectModal() {
 	document.getElementById('projectModalOverlay')?.classList.remove('open');
+	editingProjectId = null;
 }
 
 async function saveProject(event) {
@@ -104,20 +120,29 @@ async function saveProject(event) {
 	}
 
 	status.textContent = 'Kaydediliyor…';
-	const { data, error } = await sb
-		.from('projects')
-		.insert({
-			user_id: state.currentUser.id,
-			name,
-			client_name: clientName,
-			target_domain: targetDomain || null,
-		})
-		.select()
-		.single();
+	const values = {
+		name,
+		client_name: clientName,
+		target_domain: targetDomain || null,
+	};
+	const query = editingProjectId
+		? sb
+				.from('projects')
+				.update(values)
+				.eq('id', editingProjectId)
+				.eq('user_id', state.currentUser.id)
+		: sb.from('projects').insert({
+				user_id: state.currentUser.id,
+				...values,
+		  });
+	const { data, error } = await query.select().single();
 
 	if (error) {
 		console.error(error);
-		status.textContent = 'Proje kaydedilemedi. Proje adı benzersiz olmalı.';
+		status.textContent =
+			editingProjectId
+				? 'Proje güncellenemedi. Proje adı benzersiz olmalı.'
+				: 'Proje kaydedilemedi. Proje adı benzersiz olmalı.';
 		return;
 	}
 
@@ -142,6 +167,9 @@ export function init(projectChangeHandler) {
 	document
 		.getElementById('addProjectBtn')
 		.addEventListener('click', openProjectModal);
+	document.getElementById('editProjectBtn').addEventListener('click', () => {
+		if (state.currentProject) openProjectModal(state.currentProject);
+	});
 	document
 		.getElementById('closeProjectModalBtn')
 		.addEventListener('click', closeProjectModal);
