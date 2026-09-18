@@ -10,6 +10,7 @@ import * as settingsModal from './settingsModal.js';
 import * as projects from './projects.js';
 import * as dashboard from './dashboard.js';
 import * as reports from './reports.js';
+import * as searchConsole from './searchConsole.js';
 import * as auth from './auth.js';
 
 initTheme();
@@ -18,6 +19,7 @@ feed.init();
 keywordsModal.init();
 settingsModal.init();
 reports.init();
+searchConsole.init();
 projects.init(async () => {
 	await feed.loadRuns();
 	await dashboard.loadProjectDashboard();

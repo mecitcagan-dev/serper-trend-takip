@@ -104,7 +104,7 @@ tablosu, UTF-8 CSV indirme ve tarayıcının ücretsiz yazdır/PDF akışı ekle
 Rapor verisi yalnızca seçili projenin `runs` kayıtlarından okunuyor; ücretli
 e-posta veya rapor servisi kullanılmıyor. Statik kontroller geçti.
 
-### 6. Google Search Console bağlantısı
+### 6. Google Search Console bağlantısı — Kod hazır
 
 - Kullanıcı, yetkilendirdiği Search Console mülkünü projeye bağlayabilecek.
 - Kelime bazında gösterim, tıklama, CTR ve ortalama pozisyon verileri
@@ -114,6 +114,13 @@ e-posta veya rapor servisi kullanılmıyor. Statik kontroller geçti.
 
 **Tamamlanma ölçütü:** Bir proje için en az bir Search Console mülkünden
 okuma yetkili performans verisi getirilebilmeli.
+
+**Kontrol:** Ücretsiz Google Identity Services token akışı, mülk listeleme,
+proje mülkü kaydetme ve Search Analytics sorgusu eklendi. Tıklama, gösterim,
+CTR ve GSC ortalama pozisyonu; son SERP hedef sırasıyla aynı tabloda
+karşılaştırılıyor. OAuth token'ı saklanmıyor. Canlı kabul için Google Cloud'da
+ücretsiz OAuth web client oluşturulması, Search Console API'nin açılması ve
+`schema.sql` v9 migrationının çalıştırılması gerekiyor.
 
 ### 7. GEO/AI görünürlük modülü
 

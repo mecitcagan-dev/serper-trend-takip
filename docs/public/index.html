@@ -228,6 +228,14 @@
 							Rapor
 						</button>
 						<button
+							class="icon-btn report-btn"
+							id="searchConsoleBtn"
+							title="Search Console"
+							aria-label="Search Console"
+						>
+							GSC
+						</button>
+						<button
 							class="icon-btn"
 							id="refreshBtn"
 							title="Yenile"
@@ -428,6 +436,81 @@
 					<div class="report-summary" id="reportSummary"></div>
 					<div class="report-table-wrap" id="reportTableWrap">
 						<p class="detail-muted">Raporu görmek için tarih aralığı seç.</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Search Console Modal -->
+		<div class="modal-overlay" id="searchConsoleModalOverlay">
+			<div class="modal modal-report">
+				<div class="modal-header">
+					<h2>Google Search Console</h2>
+					<button class="icon-btn" id="closeSearchConsoleBtn" aria-label="Kapat">
+						<svg viewBox="0 0 20 20" fill="none">
+							<path
+								d="M5 5l10 10M15 5 5 15"
+								stroke="currentColor"
+								stroke-width="1.6"
+								stroke-linecap="round"
+							/>
+						</svg>
+					</button>
+				</div>
+				<div class="modal-body">
+					<p class="modal-hint">
+						Ücretsiz Google OAuth bağlantısıdır. Client ID yalnızca bu tarayıcıda
+						saklanır; erişim token'ı sunucuya veya Supabase'e yazılmaz.
+					</p>
+					<div class="settings-section">
+						<label class="settings-section-label" for="googleClientIdInput"
+							>Google OAuth Client ID</label
+						>
+						<input
+							class="settings-input"
+							id="googleClientIdInput"
+							placeholder="123...apps.googleusercontent.com"
+							autocomplete="off"
+						/>
+						<p class="modal-hint">
+							Google Cloud Console'da ücretsiz bir OAuth web client oluşturup
+							Search Console API'yi etkinleştirmen gerekir.
+						</p>
+					</div>
+					<div class="report-actions report-gsc-actions">
+						<button class="secondary-btn" id="connectSearchConsoleBtn" type="button">
+							Google'a bağlan ve mülkleri getir
+						</button>
+					</div>
+					<div class="settings-section">
+						<label class="settings-section-label" for="gscPropertySelect"
+							>Search Console mülkü</label
+						>
+						<select class="settings-input" id="gscPropertySelect" disabled>
+							<option value="">Önce Google'a bağlan</option>
+						</select>
+						<div class="report-actions report-gsc-actions">
+							<button class="secondary-btn" id="saveGscPropertyBtn" type="button">
+								Mülkü projeye kaydet
+							</button>
+						</div>
+					</div>
+					<div class="report-filters">
+						<div>
+							<label class="settings-section-label" for="gscStartDate">Başlangıç</label>
+							<input class="settings-input" type="date" id="gscStartDate" />
+						</div>
+						<div>
+							<label class="settings-section-label" for="gscEndDate">Bitiş</label>
+							<input class="settings-input" type="date" id="gscEndDate" />
+						</div>
+						<button class="secondary-btn" id="loadGscDataBtn" type="button">
+							Veriyi getir
+						</button>
+					</div>
+					<div class="report-status" id="gscStatus"></div>
+					<div class="report-table-wrap" id="gscTableWrap">
+						<p class="detail-muted">Search Console verisi henüz yüklenmedi.</p>
 					</div>
 				</div>
 			</div>
@@ -657,6 +740,7 @@ seo ajansı istanbul, e-ticaret sitesi kurma"
 			</div>
 		</div>
 
+		<script src="https://accounts.google.com/gsi/client" async defer></script>
 		<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 		<script src="config.js"></script>
 		<script type="module" src="js/main.js"></script>

@@ -166,6 +166,14 @@ alter table projects add column if not exists country_code text not null default
 alter table projects add column if not exists language_code text not null default 'tr';
 alter table projects add column if not exists location text;
 alter table projects add column if not exists device text not null default 'desktop';
+
+-- =============================================================
+-- v9: Google Search Console proje mülkü
+-- =============================================================
+
+-- OAuth access token tutulmaz; yalnızca kullanıcının seçtiği mülk adresi
+-- proje bağlamında saklanır. Token tarayıcı oturumu içinde geçici kalır.
+alter table projects add column if not exists gsc_site_url text;
 grant select, insert, update, delete on public.settings to service_role;
 grant usage on all sequences in schema public to service_role;
 

@@ -651,6 +651,10 @@ body {
 	gap: 8px;
 	margin: 14px 0;
 }
+.report-gsc-actions {
+	justify-content: flex-start;
+	margin: 10px 0 0;
+}
 .report-status {
 	min-height: 18px;
 	font-size: 12px;
