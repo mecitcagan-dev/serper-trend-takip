@@ -1,12 +1,13 @@
 # Serper Trend Takip
 
-Belirlediğin anahtar kelimelerin Google TR sonuçlarını her 6 saatte bir
+Belirlediğin anahtar kelimelerin Google TR sonuçlarını seçtiğin sıklıkta
 serper.dev üzerinden tarayan, değişiklikleri (yeni rakip, sıralama değişimi,
 yeni "insanlar ayrıca sordu" soruları, yeni ilgili aramalar) Slack Activity
 tarzı bir akışta gösteren, tamamen ücretsiz ve sunucu gerektirmeyen otomasyon.
 
 **Mimari:** GitHub Actions (cron + Python) → Supabase (veritabanı) → GitHub
-Pages (arayüz).
+Pages (arayüz). GitHub cron gecikirse aynı workflow, ücretsiz bir dış cron
+servisiyle `workflow_dispatch` üzerinden tetiklenebilir.
 
 ---
 
@@ -50,6 +51,7 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 | `SUPABASE_URL`         | Supabase Project URL      |
 | `SUPABASE_SERVICE_KEY` | Supabase service_role key |
 | `SERPER_API_KEY`       | serper.dev API anahtarın  |
+| `SHARED_SERPER_API_KEY`| Alternatif ortak Serper key'i (opsiyonel) |
 
 ### 5. Otomasyonu test et
 
@@ -57,7 +59,30 @@ Repo → **Actions** sekmesi → "Serper Trend Taramasi" workflow'unu seç →
 **Run workflow** ile manuel tetikle. Yeşil ✓ görünce Supabase'de `runs`
 tablosunda yeni bir satır oluşmuş olmalı.
 
-### 6. Auth ayarı (opsiyonel)
+Workflow logunda önce secret kontrolü, sonra profil ve kelime sayısı
+görünür. `runs` tablosuna kayıt yazılmıyorsa logdaki ilk `HATA` satırını
+kontrol et; özellikle `schema.sql` içindeki `service_role` GRANT'larının
+Supabase SQL Editor'de çalıştırılmış olması gerekir.
+
+### 6. GitHub cron gecikirse ücretsiz dış tetikleyici
+
+GitHub Actions `schedule` olayları garanti zamanlayıcı değildir. 5 dakikalık
+kontrol ihtiyacı için [cron-job.org](https://cron-job.org/) üzerinde 5 dakikalık
+bir job oluşturup aşağıdaki isteği gönder:
+
+- URL: `https://api.github.com/repos/KULLANICI/REPO/actions/workflows/scan.yml/dispatches`
+- Method: `POST`
+- Headers: `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`,
+  `Content-Type: application/json`, `Authorization: Bearer GITHUB_TOKEN`
+- Body: `{"ref":"main"}`
+
+Token, yalnızca bu repo için workflow çalıştırma yetkisi olan fine-grained bir
+GitHub token'ı olmalı. Supabase ve Serper secret'larını cron-job.org'a
+ekleme; onlar GitHub Secrets'ta kalır. Aynı anda hem GitHub schedule hem dış
+cron açık bırakılırsa workflow'daki concurrency ayarı çakışan çalıştırmaları
+bekletir.
+
+### 7. Auth ayarı (opsiyonel)
 
 Supabase Dashboard → **Authentication → Providers → Email**: varsayılan olarak
 kayıt sonrası email onayı istenir. Test sırasında hızlı ilerlemek istersen
@@ -68,7 +93,7 @@ anında giriş yapılmış olur. Prod'da açık bırakman önerilir.
 yerine `authenticated_*` kurallarını koyar (artık siteye sadece giriş yapmış
 kullanıcılar erişebilir).
 
-### 7. Frontend'i doldur ve yayınla
+### 8. Frontend'i doldur ve yayınla
 
 1. `site/config.js` içindeki iki değeri doldur:
    ```js
@@ -85,17 +110,17 @@ kullanıcılar erişebilir).
 
 ## Kullanım
 
-- Ana ekranda **Activity** akışını görürsün — her 6 saatlik tarama burada bir
+- Ana ekranda **Activity** akışını görürsün — her başarılı tarama burada bir
   kart olarak belirir.
 - Bir karta tıkla → sağda o çalıştırmanın tam raporu açılır.
 - Sağ alttaki **"Kelimeleri Düzenle"** butonuyla kelime ekle/sil/aktif-pasif
-  yap, **Kaydet**'e bas. Bir sonraki (ve hâlihazırda kurulu) 6 saatlik döngü
-  güncel listeyi kullanır.
+  yap, **Kaydet**'e bas. Bir sonraki tarama güncel listeyi kullanır.
 
 ## Bilinmesi gerekenler
 
-- GitHub Actions'ın cron tetikleyicisi _best-effort_'tur — yoğun saatlerde
-  birkaç dakika gecikebilir, kritik değil.
+- GitHub Actions'ın cron tetikleyicisi _best-effort_'tur — gecikebilir veya
+  yoğunlukta bir çalıştırmayı düşürebilir. Düzenli 5 dakikalık tetikleme
+  gerekiyorsa yukarıdaki cron-job.org fallback'ini kullan.
 - Frontend, herkese açık bir link olduğu için (şifre korumasız) sadece linki
   bilenler erişebilir. İstersen ileride basit bir parola ekranı eklenebilir.
 - Ücretsiz kotalar: GitHub Actions private repo'da ayda 2.000 dk (biz ayda

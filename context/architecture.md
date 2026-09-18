@@ -9,7 +9,7 @@
 | Auth                  | Supabase Auth (email/şifre + Google OAuth)          | Kullanıcı kimlik doğrulama, oturum yönetimi   |
 | Veritabanı            | Supabase (Postgres) + Row Level Security            | Veri saklama + kullanıcı izolasyonu           |
 | Otomasyon             | Python 3 (`scan.py`, `requests`, `supabase-py`)     | Periyodik tarama, karşılaştırma, veri yazımı  |
-| Zamanlayıcı           | GitHub Actions (cron)                               | `scan.py`'yi periyodik tetikleme              |
+| Zamanlayıcı           | GitHub Actions (cron) + opsiyonel dış cron           | `scan.py`'yi periyodik tetikleme              |
 | Hosting (frontend)    | Vercel (statik site)                                | `docs/` klasörünü servis etme                 |
 | Build                 | Node.js script (`generate-config.js`)               | `.env` / Vercel env var → `config.js` üretimi |
 | 3. parti veri kaynağı | serper.dev API                                      | Google TR arama sonuçları                     |
@@ -91,8 +91,11 @@ tahmin etmemeli.
 - `schema.sql` — Veritabanı şemasının ve RLS policy'lerinin TEK
   doğruluk kaynağı (source of truth). Şema değişikliği önce burada
   yapılır, sonra Supabase Dashboard'da çalıştırılır.
-- `.github/workflows/scan.yml` — Cron tetikleyici tanımı, GitHub
-  Secrets'ı `scan.py`'ye ortam değişkeni olarak geçirir.
+- `.github/workflows/scan.yml` — GitHub cron/manual tetikleyici tanımı,
+  GitHub Secrets'ı `scan.py`'ye ortam değişkeni olarak geçirir. GitHub'ın
+  best-effort schedule davranışı yetersiz kalırsa aynı workflow
+  `workflow_dispatch` API'si üzerinden ücretsiz bir dış cron servisiyle
+  tetiklenebilir.
 - `context/*.md` + `CLAUDE.md` — Proje bağlamı; kod değil, sadece
   yapay zeka asistanları ve geliştiriciler için dokümantasyon.
 

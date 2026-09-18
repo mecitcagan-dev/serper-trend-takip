@@ -214,10 +214,24 @@ def scan_for_user(supabase, user_id: str, serper_key: str) -> bool:
 
 
 def main():
+    trigger = os.environ.get("GITHUB_EVENT_NAME", "manual/local")
+    workflow_run = os.environ.get("GITHUB_RUN_ID", "n/a")
+    started_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    print(f"Tarama başladı: {started_at} | tetikleyici={trigger} | workflow_run={workflow_run}")
+
     supabase = get_client()
+    print("Supabase istemcisi hazır; profiller okunuyor.")
     shared_key = get_shared_serper_key()
 
-    profiles = get_all_profiles(supabase)
+    try:
+        profiles = get_all_profiles(supabase)
+    except Exception as e:
+        print(
+            "HATA: Supabase profilleri okunamadı. service_role GRANT'larını "
+            f"kontrol edin. Ayrıntı: {e}",
+            file=sys.stderr,
+        )
+        raise
 
     if not profiles:
         print("Kayıtlı profil bulunamadı. Çıkılıyor.")

@@ -34,7 +34,10 @@ Actions + Supabase free tier + Vercel free tier + serper.dev free quota)
    kişi başı 10 taramalık ortak deneme key'ini kullanmaya devam eder
 4. "Kelimeleri Düzenle" modalından takip etmek istediği anahtar
    kelimeleri tekli/toplu ekler, aktif/pasif işaretler
-5. GitHub Actions cron'u (her saat başı tetiklenir, ama kullanıcının seçtiği sıklık geçmemişse gerçek taramayı atlar) arka planda tarama yapar
+5. GitHub Actions cron'u (5 dakikada bir kontrol eder, ancak GitHub bunu
+   best-effort çalıştırır) arka planda tarama yapar; gerçek tarama, kullanıcının
+   seçtiği sıklık geçmemişse `scan.py` tarafından atlanır. Gerekirse aynı
+   workflow ücretsiz bir dış cron servisiyle tetiklenebilir.
 6. Yeni bir çalıştırma (run) olduğunda kullanıcı Activity akışını
    yenileyip (veya sayfayı açtığında) kartları görür, karta tıklayıp
    detaylı raporu okur

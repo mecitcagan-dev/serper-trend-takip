@@ -2,16 +2,28 @@ name: Serper Trend Taramasi
 
 on:
   schedule:
-    # Production: her saat başı (00:00, 01:00, 02:00, ... UTC) tetiklenir.
-    # Bu sadece "kontrol" tetikleyicisi — gerçek tarama, kullanıcının
-    # Ayarlar'da seçtiği sıklık (scan_interval_minutes) henüz dolmadıysa
-    # scan.py tarafından atlanır.
-    - cron: '*/5 * * * *'
+    # GitHub Actions'ın desteklediği en kısa aralık 5 dakikadır. 03, 08,
+    # 13... dakikalarını kullanmak saat başı yoğunluğundan kaçınır.
+    # Bu sadece kontrol tetikleyicisidir; gerçek tarama sıklığını scan.py,
+    # kullanıcının scan_interval_minutes ayarına göre belirler.
+    - cron: '3/5 * * * *'
   workflow_dispatch: {} # "Run workflow" ile manuel de tetiklenebilir
+
+# Schedule olayları gecikebilir veya düşebilir; dış tetikleyici ve manuel
+# çalıştırma aynı anda gelirse iki tarama birbirinin üstüne binmesin.
+concurrency:
+  group: serper-trend-scan
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONUNBUFFERED: '1'
     steps:
       - name: Repo'yu al
         uses: actions/checkout@v4
@@ -21,12 +33,33 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Gerekli secret kontrolü
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+          SHARED_SERPER_API_KEY: ${{ secrets.SHARED_SERPER_API_KEY }}
+        run: |
+          missing=()
+          [[ -n "$SUPABASE_URL" ]] || missing+=(SUPABASE_URL)
+          [[ -n "$SUPABASE_SERVICE_KEY" ]] || missing+=(SUPABASE_SERVICE_KEY)
+          if [[ -z "$SERPER_API_KEY" && -z "$SHARED_SERPER_API_KEY" ]]; then
+            missing+=(SERPER_API_KEY/SHARED_SERPER_API_KEY)
+          fi
+          if (( ${#missing[@]} )); then
+            echo "Eksik GitHub Secret: ${missing[*]}" >&2
+            exit 1
+          fi
+          echo "Gerekli GitHub Secret'lar mevcut."
+
       - name: Bağımlılıkları kur
-        run: pip install -r requirements.txt
+        run: python -m pip install --disable-pip-version-check --no-input -r requirements.txt
 
       - name: Taramayı çalıştır
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
-        run: python scan.py
+          SHARED_SERPER_API_KEY: ${{ secrets.SHARED_SERPER_API_KEY }}
+        run: python -u scan.py
