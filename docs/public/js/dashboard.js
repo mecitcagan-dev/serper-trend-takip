@@ -3,6 +3,7 @@ import { state } from './state.js';
 import { SHARED_KEY_LIMIT } from './serperKey.js';
 
 const DEFAULT_INTERVAL_MINUTES = 360;
+const SCHEDULER_INTERVAL_MINUTES = 5;
 
 function setText(id, value) {
 	const element = document.getElementById(id);
@@ -23,10 +24,36 @@ function formatDate(value, multiline = false) {
 	return multiline ? `${datePart}\n${timePart}` : `${datePart} ${timePart}`;
 }
 
+function ceilToSchedulerTick(value) {
+	const tick = new Date(value);
+	const hasPartialMinute = tick.getSeconds() !== 0 || tick.getMilliseconds() !== 0;
+	const remainder = tick.getMinutes() % SCHEDULER_INTERVAL_MINUTES;
+	tick.setSeconds(0, 0);
+	const minutesToAdd = remainder
+		? SCHEDULER_INTERVAL_MINUTES - remainder
+		: hasPartialMinute
+			? SCHEDULER_INTERVAL_MINUTES
+			: 0;
+	if (minutesToAdd) {
+		tick.setMinutes(tick.getMinutes() + minutesToAdd);
+	}
+	return tick;
+}
+
+function nextSchedulerTick(after) {
+	const tick = ceilToSchedulerTick(after);
+	if (tick <= after) {
+		tick.setMinutes(tick.getMinutes() + SCHEDULER_INTERVAL_MINUTES);
+	}
+	return tick;
+}
+
 function formatNextRun(lastRun, intervalMinutes, multiline = false) {
 	if (!lastRun) return 'İlk tarama bekleniyor';
-	const next = new Date(lastRun);
-	next.setMinutes(next.getMinutes() + intervalMinutes);
+	const now = new Date();
+	const due = new Date(lastRun);
+	due.setMinutes(due.getMinutes() + intervalMinutes);
+	const next = due > now ? ceilToSchedulerTick(due) : nextSchedulerTick(now);
 	return formatDate(next.toISOString(), multiline);
 }
 
