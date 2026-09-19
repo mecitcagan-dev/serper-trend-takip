@@ -329,6 +329,10 @@
 								/>
 							</svg>
 						</button>
+						<button class="new-project-top-btn" id="newProjectTopBtn" type="button">
+							<span aria-hidden="true">+</span>
+							Yeni Proje
+						</button>
 						<!-- Profil avatarı -->
 						<div class="profile-wrap" id="profileWrap">
 							<button
@@ -433,10 +437,71 @@
 						<span class="detail-project-icon" aria-hidden="true">+</span>
 						<h2>Yeni proje oluştur</h2>
 						<p>Yeni müşteri veya domain için ayrı bir takip alanı oluştur.</p>
-						<button class="detail-create-btn" id="addProjectBtn" type="button">
-							Proje oluştur
+					</div>
+				</div>
+				<div class="inline-project-panel" id="inlineProjectPanel">
+					<div class="inline-project-header">
+						<div>
+							<span class="detail-muted">PROJE YÖNETİMİ</span>
+							<h2>Yeni proje</h2>
+						</div>
+						<button class="icon-btn" id="closeInlineProjectBtn" type="button" aria-label="Yeni proje formunu kapat">
+							<svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+								<path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+							</svg>
 						</button>
 					</div>
+					<p class="inline-project-intro">Yeni müşteri veya domain için ayrı bir takip alanı oluştur.</p>
+					<form class="inline-project-form" id="inlineProjectForm">
+						<div class="inline-project-grid">
+							<div class="settings-section">
+								<label class="settings-section-label" for="inlineProjectNameInput">Proje adı</label>
+								<input class="settings-input" id="inlineProjectNameInput" required placeholder="Örn. Vayes ana site" />
+							</div>
+							<div class="settings-section">
+								<label class="settings-section-label" for="inlineProjectClientInput">Müşteri adı</label>
+								<input class="settings-input" id="inlineProjectClientInput" placeholder="Örn. Vayes Digital" />
+							</div>
+						</div>
+						<div class="settings-section">
+							<label class="settings-section-label" for="inlineProjectDomainInput">Hedef domain (opsiyonel)</label>
+							<input class="settings-input" id="inlineProjectDomainInput" placeholder="vayes.com.tr" inputmode="url" />
+						</div>
+						<div class="inline-project-grid">
+							<div class="settings-section">
+								<label class="settings-section-label" for="inlineProjectCountryInput">Arama ülkesi</label>
+								<select class="settings-input" id="inlineProjectCountryInput">
+									<option value="tr">Türkiye</option>
+									<option value="gb">Birleşik Krallık</option>
+									<option value="us">Amerika Birleşik Devletleri</option>
+									<option value="de">Almanya</option>
+									<option value="nl">Hollanda</option>
+									<option value="fr">Fransa</option>
+								</select>
+							</div>
+							<div class="settings-section">
+								<label class="settings-section-label" for="inlineProjectLanguageInput">Arama dili</label>
+								<input class="settings-input" id="inlineProjectLanguageInput" value="tr" maxlength="5" placeholder="tr" />
+							</div>
+						</div>
+						<div class="inline-project-grid">
+							<div class="settings-section">
+								<label class="settings-section-label" for="inlineProjectLocationInput">Şehir / lokasyon (opsiyonel)</label>
+								<input class="settings-input" id="inlineProjectLocationInput" placeholder="İstanbul, Türkiye" />
+							</div>
+							<div class="settings-section">
+								<label class="settings-section-label" for="inlineProjectDeviceInput">Cihaz</label>
+								<select class="settings-input" id="inlineProjectDeviceInput">
+									<option value="desktop">Masaüstü</option>
+									<option value="mobile">Mobil</option>
+								</select>
+							</div>
+						</div>
+						<div class="inline-project-footer">
+							<span class="save-status" id="inlineProjectSaveStatus"></span>
+							<button class="save-btn" id="inlineProjectSaveBtn" type="submit">Proje oluştur</button>
+						</div>
+					</form>
 				</div>
 			</div>
 		</div>

@@ -38,7 +38,7 @@ export function applyRolePermissions(role = 'admin') {
 	const readOnly = role === 'client_viewer';
 	[
 		'editKeywordsBtn',
-		'addProjectBtn',
+		'newProjectTopBtn',
 		'editProjectBtn',
 		'geoBtn',
 		'serperKeyBtn',

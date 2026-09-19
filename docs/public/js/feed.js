@@ -134,13 +134,11 @@ export function renderDetail(run) {
 		?.classList.toggle('has-detail', Boolean(run));
 	const panel = document.getElementById('detailContent') || document.getElementById('detailPanel');
 	if (!run) {
-		const createButtonClass = state.userRole === 'client_viewer' ? ' hidden' : '';
 		panel.innerHTML = `
 			<div class="detail-empty detail-project-empty">
 				<span class="detail-project-icon" aria-hidden="true">+</span>
 				<h2>Yeni proje oluştur</h2>
 				<p>Yeni müşteri veya domain için ayrı bir takip alanı oluştur.</p>
-				<button class="detail-create-btn${createButtonClass}" id="addProjectBtn" type="button">Proje oluştur</button>
 			</div>
 		`;
 		return;

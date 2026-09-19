@@ -130,35 +130,65 @@ function closeProjectModal() {
 	editingProjectId = null;
 }
 
+function getProjectField(prefix, name) {
+	return document.getElementById(`${prefix}${name}Input`);
+}
+
+function openInlineProjectForm() {
+	const detailPanel = document.getElementById('detailPanel');
+	const detailContent = document.getElementById('detailContent');
+	const formPanel = document.getElementById('inlineProjectPanel');
+	const form = document.getElementById('inlineProjectForm');
+	if (!detailPanel || !detailContent || !formPanel || !form) return;
+
+	detailPanel.dataset.restoreDetail = String(detailPanel.classList.contains('has-detail'));
+	detailPanel.classList.remove('has-detail');
+	detailPanel.classList.add('is-form-open');
+	detailContent.classList.add('hidden');
+	formPanel.classList.add('open');
+	form.reset();
+	document.getElementById('inlineProjectSaveStatus').textContent = '';
+	getProjectField('inlineProject', 'Language').value = 'tr';
+}
+
+function closeInlineProjectForm() {
+	const detailPanel = document.getElementById('detailPanel');
+	const detailContent = document.getElementById('detailContent');
+	const formPanel = document.getElementById('inlineProjectPanel');
+	if (!detailPanel || !detailContent || !formPanel) return;
+
+	formPanel.classList.remove('open');
+	detailContent.classList.remove('hidden');
+	detailPanel.classList.remove('is-form-open');
+	detailPanel.classList.toggle(
+		'has-detail',
+		detailPanel.dataset.restoreDetail === 'true',
+	);
+	delete detailPanel.dataset.restoreDetail;
+}
+
 async function saveProject(event) {
 	event.preventDefault();
 	if (!state.currentUser) return;
 
-	const status = document.getElementById('projectSaveStatus');
-	const name = document.getElementById('projectNameInput').value.trim();
-	const clientName = document
-		.getElementById('projectClientInput')
-		.value.trim();
-	const targetDomain = document
-		.getElementById('projectDomainInput')
-		.value.trim();
-	const countryCode = document
-		.getElementById('projectCountryInput')
-		.value.trim()
-		.toLowerCase();
-	const languageCode = document
-		.getElementById('projectLanguageInput')
-		.value.trim()
-		.toLowerCase();
-	const location = document.getElementById('projectLocationInput').value.trim();
-	const device = document.getElementById('projectDeviceInput').value;
+	const isInline = event.currentTarget?.id === 'inlineProjectForm';
+	const prefix = isInline ? 'inlineProject' : 'project';
+	const statusId = isInline ? 'inlineProjectSaveStatus' : 'projectSaveStatus';
+	const status = document.getElementById(statusId);
+	const name = getProjectField(prefix, 'Name').value.trim();
+	const clientName = getProjectField(prefix, 'Client').value.trim();
+	const targetDomain = getProjectField(prefix, 'Domain').value.trim();
+	const countryCode = getProjectField(prefix, 'Country').value.trim().toLowerCase();
+	const languageCode = getProjectField(prefix, 'Language').value.trim().toLowerCase();
+	const location = getProjectField(prefix, 'Location').value.trim();
+	const device = getProjectField(prefix, 'Device').value;
 
 	if (!name) {
-		status.textContent = 'Proje adı gerekli.';
+		if (status) status.textContent = 'Proje adı gerekli.';
 		return;
 	}
 
-	status.textContent = 'Kaydediliyor…';
+	if (status) status.textContent = 'Kaydediliyor…';
 	const values = {
 		name,
 		client_name: clientName,
@@ -168,11 +198,12 @@ async function saveProject(event) {
 		location: location || null,
 		device: device === 'mobile' ? 'mobile' : 'desktop',
 	};
-	const query = editingProjectId
+	const projectId = isInline ? null : editingProjectId;
+	const query = projectId
 		? sb
 				.from('projects')
 				.update(values)
-				.eq('id', editingProjectId)
+				.eq('id', projectId)
 				.eq('user_id', state.currentUser.id)
 		: sb.from('projects').insert({
 				user_id: state.currentUser.id,
@@ -182,18 +213,21 @@ async function saveProject(event) {
 
 	if (error) {
 		console.error(error);
-		status.textContent =
-			editingProjectId
-				? 'Proje güncellenemedi. Proje adı benzersiz olmalı.'
-				: 'Proje kaydedilemedi. Proje adı benzersiz olmalı.';
+		if (status) {
+			status.textContent =
+				projectId
+					? 'Proje güncellenemedi. Proje adı benzersiz olmalı.'
+					: 'Proje kaydedilemedi. Proje adı benzersiz olmalı.';
+		}
 		return;
 	}
 
 	state.currentProject = data;
-	logAudit(editingProjectId ? 'project_updated' : 'project_created', {
+	logAudit(projectId ? 'project_updated' : 'project_created', {
 		project_id: data.id,
 	});
-	closeProjectModal();
+	if (isInline) closeInlineProjectForm();
+	else closeProjectModal();
 	await loadProjects({ notify: true });
 }
 
@@ -223,9 +257,15 @@ export function init(projectChangeHandler) {
 		const wrap = document.getElementById('projectSelectWrap');
 		if (wrap && !wrap.contains(event.target)) setProjectPickerOpen(false);
 	});
-	document.getElementById('detailContent')?.addEventListener('click', (event) => {
-		if (event.target.closest('#addProjectBtn')) openProjectModal();
-	});
+	document
+		.getElementById('newProjectTopBtn')
+		?.addEventListener('click', openInlineProjectForm);
+	document
+		.getElementById('closeInlineProjectBtn')
+		?.addEventListener('click', closeInlineProjectForm);
+	document
+		.getElementById('inlineProjectForm')
+		?.addEventListener('submit', saveProject);
 	document.getElementById('editProjectBtn').addEventListener('click', () => {
 		if (state.currentProject) openProjectModal(state.currentProject);
 	});
