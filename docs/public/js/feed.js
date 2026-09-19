@@ -134,13 +134,7 @@ export function renderDetail(run) {
 		?.classList.toggle('has-detail', Boolean(run));
 	const panel = document.getElementById('detailContent') || document.getElementById('detailPanel');
 	if (!run) {
-		panel.innerHTML = `
-			<div class="detail-empty detail-project-empty">
-				<span class="detail-project-icon" aria-hidden="true">+</span>
-				<h2>Yeni proje oluştur</h2>
-				<p>Yeni müşteri veya domain için ayrı bir takip alanı oluştur.</p>
-			</div>
-		`;
+		panel.innerHTML = '';
 		return;
 	}
 	const meta = EVENT_META[run.event_type] || EVENT_META.degisiklik_yok;
