@@ -62,13 +62,12 @@ serper-trend-takip/
             ├── auth.js               ← giriş/kayıt/oturum
             ├── feed.js                ← Activity akışı + detay paneli
             ├── keywordsModal.js      ← kelime ekleme/silme
-            ├── settingsModal.js      ← Serper key + tarama sıklığı
+            ├── apiKeyModal.js        ← Serper API key yönetimi
+            ├── intervalControl.js   ← tarama sıklığı yönetimi
             ├── serperKey.js          ← ücretsiz kota banner'ı
             ├── projects.js           ← müşteri/proje bağlamı
             ├── dashboard.js          ← proje özeti ve kota
             ├── reports.js            ← CSV + yazdırılabilir rapor
-            ├── searchConsole.js      ← ücretsiz GSC OAuth/Analytics
-            ├── geo.js                ← manuel GEO kanıt kayıtları
             ├── audit.js              ← işlem audit kayıtları
             ├── profileMenu.js        ← avatar/dropdown, tema, çıkış
             ├── theme.js              ← açık/koyu tema
@@ -109,7 +108,7 @@ tahmin etmemeli.
 
 - **Veritabanı (Supabase/Postgres)**: Tüm kalıcı veri burada —
   `profiles`, `projects`, `keywords`, `runs`, `keyword_snapshots`, `settings`,
-  `geo_checks`, `audit_logs`, `scan_leases`
+  `audit_logs`, `scan_leases`
   (bkz. `schema.sql`). Blob/dosya depolama YOK, her şey ilişkisel
   tablo + jsonb kolonlarda (`runs.details`,
   `keyword_snapshots.organic` vb.).

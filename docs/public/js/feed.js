@@ -129,12 +129,14 @@ export function selectRun(runId) {
 }
 
 export function renderDetail(run) {
+	const detailPanel = document.getElementById('detailPanel');
 	document
-		.getElementById('detailPanel')
+		detailPanel
 		?.classList.toggle('has-detail', Boolean(run));
 	const panel = document.getElementById('detailContent') || document.getElementById('detailPanel');
 	if (!run) {
 		panel.innerHTML = '';
+		detailPanel?.scrollTo({ top: 0, behavior: 'auto' });
 		return;
 	}
 	const meta = EVENT_META[run.event_type] || EVENT_META.degisiklik_yok;
@@ -213,6 +215,7 @@ export function renderDetail(run) {
     </div>
     <div class="detail-body">${bodyHtml}</div>
   `;
+	detailPanel?.scrollTo({ top: 0, behavior: 'auto' });
 }
 
 export function init() {

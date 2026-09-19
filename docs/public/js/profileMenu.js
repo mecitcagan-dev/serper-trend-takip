@@ -40,7 +40,6 @@ export function applyRolePermissions(role = 'admin') {
 		'editKeywordsBtn',
 		'newProjectTopBtn',
 		'editProjectBtn',
-		'geoBtn',
 		'serperKeyBtn',
 		'intervalToggleBtn',
 	].forEach((id) =>

@@ -12,8 +12,6 @@ import * as toolsMenu from './toolsMenu.js';
 import * as apiKeyModal from './apiKeyModal.js';
 import * as intervalControl from './intervalControl.js';
 import * as reports from './reports.js';
-import * as searchConsole from './searchConsole.js';
-import * as geo from './geo.js';
 import * as auth from './auth.js';
 
 initTheme();
@@ -25,8 +23,6 @@ toolsMenu.init();
 apiKeyModal.init();
 intervalControl.init();
 reports.init();
-searchConsole.init();
-geo.init();
 projects.init(async () => {
 	await feed.loadRuns();
 	await dashboard.loadProjectDashboard();

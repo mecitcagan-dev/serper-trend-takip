@@ -17,7 +17,7 @@ servisiyle `workflow_dispatch` üzerinden tetiklenebilir.
 
 1. Supabase projenin **SQL Editor**'üne gir.
 2. Bu repodaki `schema.sql` dosyasının tam içeriğini yapıştır, **Run**'a bas.
-   (v6–v13 migrationları; proje ayrımı, RLS, rapor, GSC, GEO, audit ve
+   (v6–v13 migrationları; proje ayrımı, RLS, rapor, audit ve
    eşzamanlı tarama korumasını getirir.)
 
 ### 2. Supabase anahtarlarını al
@@ -119,8 +119,6 @@ kullanıcılar erişebilir).
 - Üstteki **Proje** seçicisiyle müşteri bağlamını değiştir; her projenin
   kelimeleri, hedef domaini, lokasyonu ve cihazı ayrıdır.
 - **Rapor** ile tarih aralığı bazlı CSV indir veya yazdır/PDF kaydet.
-- **GSC** için ücretsiz Google OAuth Client ID gerekir; **GEO** ekranı ücretli
-  AI API kullanmadan manuel görünürlük kanıtı tutar.
 
 ## Bilinmesi gerekenler
 

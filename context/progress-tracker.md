@@ -104,45 +104,16 @@ tablosu, UTF-8 CSV indirme ve tarayıcının ücretsiz yazdır/PDF akışı ekle
 Rapor verisi yalnızca seçili projenin `runs` kayıtlarından okunuyor; ücretli
 e-posta veya rapor servisi kullanılmıyor. Statik kontroller geçti.
 
-### 6. Google Search Console bağlantısı — Kod hazır
+### 6. Search Console ve GEO modülleri — Kapsam dışı
 
-- Kullanıcı, yetkilendirdiği Search Console mülkünü projeye bağlayabilecek.
-- Kelime bazında gösterim, tıklama, CTR ve ortalama pozisyon verileri
-  okunacak.
-- SERP pozisyonu ile gerçek Search Console performansı aynı ekranda
-  karşılaştırılacak.
+- Search Console, Vayes ekibinin zaten doğrudan kullanabildiği harici bir
+  raporlama aracı olduğu için uygulamadan çıkarıldı.
+- GEO ekranı otomatik veri üretmediği ve yalnızca manuel kayıt tuttuğu için
+  uygulamaya dahil edilmiyor.
+- Şemadaki eski migration bölümleri geriye dönük veritabanı uyumluluğu için
+  korunuyor; frontend modülleri ve menüleri kaldırıldı.
 
-**Tamamlanma ölçütü:** Bir proje için en az bir Search Console mülkünden
-okuma yetkili performans verisi getirilebilmeli.
-
-**Kontrol:** Ücretsiz Google Identity Services token akışı, mülk listeleme,
-proje mülkü kaydetme ve Search Analytics sorgusu eklendi. Tıklama, gösterim,
-CTR ve GSC ortalama pozisyonu; son SERP hedef sırasıyla aynı tabloda
-karşılaştırılıyor. OAuth token'ı saklanmıyor. Canlı kabul için Google Cloud'da
-ücretsiz OAuth web client oluşturulması, Search Console API'nin açılması ve
-`schema.sql` v9 migrationının çalıştırılması gerekiyor.
-
-### 7. GEO/AI görünürlük modülü — Ücretsiz kapsam hazır
-
-- Vayes'in GEO hizmetiyle uyumlu olarak AI arama görünürlüğü ayrı bir
-  özellik olarak tanımlanacak.
-- Takip edilecek soru, marka adı, rakip ve kaynak domain modeli
-  belirlenecek.
-- Kullanılacak veri kaynağı ve ücretsiz/ücretli API sınırları netleşmeden
-  uygulamaya alınmayacak.
-- Google PAA ve related search verileri, AI görünürlüğünün yerine
-  geçirilmeden yalnızca içerik fırsatı olarak etiketlenecek.
-
-**Tamamlanma ölçütü:** AI görünürlüğü ölçümünün neyi, hangi kaynakla ve
-hangi sıklıkta ölçtüğü kullanıcıya açıkça gösterilmeli.
-
-**Kontrol:** Proje bazlı GEO kontrol kaydı eklendi. Soru, kaynak, cevap özeti,
-marka görünürlüğü, rakipler, cited domainler, not ve kontrol tarihi tutuluyor;
-geçmiş kontroller tabloda listeleniyor. Ücretli AI API'si eklenmedi ve PAA/
-related verisi AI cevabı olarak etiketlenmedi. Bu ücretsiz sürüm manuel kanıt
-toplar; otomatik AI cevap taraması kapsam dışıdır.
-
-### 8. Veri kalitesi, kota ve tarama maliyeti — Kod hazır
+### 7. Veri kalitesi, kota ve tarama maliyeti — Kod hazır
 
 - Çok kısa aralıkların üretimde gereksiz Serper tüketmesi engellenecek.
 - Sıralama ve rakip değişimlerinde gürültü azaltma kuralı uygulanacak.
@@ -160,7 +131,7 @@ tek basamak hedef domain oynama gürültü sayılıyor. Proje başına 5 dakikal
 kota ve gerçek tarama aralığını gösteriyor; varsayılan aralık 6 saat, test
 aralıkları arayüzde açıkça işaretli.
 
-### 9. Ajans güvenliği ve teslim hazırlığı — Kod/doküman hazır
+### 8. Ajans güvenliği ve teslim hazırlığı — Kod/doküman hazır
 
 - Müşteri verilerinin proje bazında RLS izolasyonu doğrulanacak.
 - API anahtarlarının saklama ve erişim modeli gözden geçirilecek.
@@ -170,10 +141,10 @@ aralıkları arayüzde açıkça işaretli.
 - Vayes kullanım senaryosu, kurulum ve pilot sonuçları teslim dokümanına
   dönüştürülecek.
 
-**Kontrol:** Proje/kelime/run/GSC/GEO erişimleri RLS ile proje sahipliğine
+**Kontrol:** Proje/kelime/run erişimleri RLS ile proje sahipliğine
 bağlandı. `admin`, `team_member`, `client_viewer` rol temeli eklendi;
 `client_viewer` veritabanı seviyesinde yazma işlemlerinden engelleniyor. Proje,
-kelime, GSC, GEO ve CSV işlemleri için temel audit kaydı tutuluyor. Ücretsiz
+kelime, run ve CSV işlemleri için temel audit kaydı tutuluyor. Ücretsiz
 teslim sürümünde ekip davet/üyelik UI'ı yok; erişim modeli güvenli kullanıcı
 sahipliğiyle sınırlı. [Vayes teslim notu](vayes-delivery.md) oluşturuldu.
 
@@ -197,7 +168,7 @@ paylaşabilmeli.
 - [x] GitHub Actions + cron-job.org otomasyonu çalışıyor.
 - [x] `scan.py` sonuçları Supabase'e yazıyor.
 - [x] Progress tracker Vayes odaklı plan hâline getirildi.
-- [x] Maddeler 1–9 için ücretsiz ürünleştirme kodu, migrationlar ve teslim
+- [x] Maddeler 1–8 için ücretsiz ürünleştirme kodu, migrationlar ve teslim
       notu hazırlandı.
 - [ ] Pilot doğrulama: Supabase migrationlarını çalıştırıp Vayes projesinde
       canlı kabul listesini tamamlamak.
