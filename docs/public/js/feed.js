@@ -25,6 +25,8 @@ export async function loadRuns() {
 	const feedList = document.getElementById('feedList');
 	if (!state.currentProject) {
 		state.allRuns = [];
+		state.selectedRunId = null;
+		renderDetail(null);
 		feedList.innerHTML =
 			'<div class="feed-empty">Görüntülemek için bir proje oluştur veya seç.</div>';
 		return;
@@ -42,10 +44,16 @@ export async function loadRuns() {
 
 	if (error) {
 		feedList.innerHTML = `<div class="feed-empty">Veri çekilemedi: ${error.message}</div>`;
+		state.selectedRunId = null;
+		renderDetail(null);
 		console.error(error);
 		return;
 	}
 	state.allRuns = data || [];
+	if (!state.allRuns.some((run) => run.id === state.selectedRunId)) {
+		state.selectedRunId = null;
+		renderDetail(null);
+	}
 	renderFeed();
 }
 
@@ -121,10 +129,20 @@ export function selectRun(runId) {
 }
 
 export function renderDetail(run) {
+	document
+		.getElementById('detailPanel')
+		?.classList.toggle('has-detail', Boolean(run));
 	const panel = document.getElementById('detailContent') || document.getElementById('detailPanel');
 	if (!run) {
-		panel.innerHTML =
-			'<div class="detail-empty">Bir kart seç, detaylı raporu burada gör.</div>';
+		const createButtonClass = state.userRole === 'client_viewer' ? ' hidden' : '';
+		panel.innerHTML = `
+			<div class="detail-empty detail-project-empty">
+				<span class="detail-project-icon" aria-hidden="true">+</span>
+				<h2>Yeni proje oluştur</h2>
+				<p>Yeni müşteri veya domain için ayrı bir takip alanı oluştur.</p>
+				<button class="detail-create-btn${createButtonClass}" id="addProjectBtn" type="button">Proje oluştur</button>
+			</div>
+		`;
 		return;
 	}
 	const meta = EVENT_META[run.event_type] || EVENT_META.degisiklik_yok;

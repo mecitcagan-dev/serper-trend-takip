@@ -223,9 +223,9 @@ export function init(projectChangeHandler) {
 		const wrap = document.getElementById('projectSelectWrap');
 		if (wrap && !wrap.contains(event.target)) setProjectPickerOpen(false);
 	});
-	document
-		.getElementById('addProjectBtn')
-		.addEventListener('click', openProjectModal);
+	document.getElementById('detailContent')?.addEventListener('click', (event) => {
+		if (event.target.closest('#addProjectBtn')) openProjectModal();
+	});
 	document.getElementById('editProjectBtn').addEventListener('click', () => {
 		if (state.currentProject) openProjectModal(state.currentProject);
 	});

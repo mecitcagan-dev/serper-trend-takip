@@ -310,26 +310,6 @@
 						</button>
 						<button
 							class="icon-btn"
-								id="settingsBtn"
-								title="Ayarlar"
-								aria-label="Ayarlar"
-							>
-								<svg class="settings-icon" viewBox="0 0 20 20" fill="none">
-								<path
-									d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
-									stroke="currentColor"
-									stroke-width="1.6"
-								/>
-								<path
-									d="M16.2 12.3c.1-.4.1-.8 0-1.2l1.1-1.2-1-1.7-1.6.4c-.3-.3-.7-.5-1-.7L13.3 6h-2l-.4 1.9c-.4.2-.7.4-1 .7l-1.6-.4-1 1.7 1.1 1.2c-.1.4-.1.8 0 1.2l-1.1 1.2 1 1.7 1.6-.4c.3.3.7.5 1 .7l.4 1.9h2l.4-1.9c.4-.2.7-.4 1-.7l1.6.4 1-1.7-1.1-1.2Z"
-									stroke="currentColor"
-									stroke-width="1.4"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</button>
-						<button
-							class="icon-btn"
 							id="editKeywordsBtn"
 							title="Kelimeleri düzenle"
 							aria-label="Kelimeleri düzenle"
@@ -448,20 +428,15 @@
 
 			<!-- Sağ panel: Detay -->
 			<div class="detail-panel" id="detailPanel">
-				<section class="project-create-card" id="projectCreateCard">
-					<div class="project-create-heading">
-						<span class="project-create-icon" aria-hidden="true">+</span>
-						<div>
-							<h2>Yeni proje</h2>
-							<p>Yeni müşteri veya domain için ayrı bir takip alanı oluştur.</p>
-						</div>
-					</div>
-					<button class="project-create-btn" id="addProjectBtn" type="button">
-						Proje oluştur
-					</button>
-				</section>
 				<div id="detailContent">
-					<div class="detail-empty">Bir kart seç, detaylı raporu burada gör.</div>
+					<div class="detail-empty detail-project-empty">
+						<span class="detail-project-icon" aria-hidden="true">+</span>
+						<h2>Yeni proje oluştur</h2>
+						<p>Yeni müşteri veya domain için ayrı bir takip alanı oluştur.</p>
+						<button class="detail-create-btn" id="addProjectBtn" type="button">
+							Proje oluştur
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -653,42 +628,6 @@
 					</form>
 					<div class="report-status" id="geoStatus"></div>
 					<div class="report-table-wrap" id="geoTableWrap"></div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Ayarlar Modal -->
-		<div class="modal-overlay" id="settingsModalOverlay">
-			<div class="modal">
-				<div class="modal-header">
-					<h2>Ayarlar</h2>
-					<button
-						class="icon-btn"
-						id="closeSettingsModalBtn"
-						aria-label="Kapat"
-					>
-						<svg viewBox="0 0 20 20" fill="none">
-							<path
-								d="M5 5l10 10M15 5 5 15"
-								stroke="currentColor"
-								stroke-width="1.6"
-								stroke-linecap="round"
-							/>
-						</svg>
-					</button>
-				</div>
-				<div class="modal-body">
-					<div class="settings-info-card">
-						<svg class="settings-info-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-							<circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" />
-							<path d="M10 9v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-							<circle cx="10" cy="6.2" r=".8" fill="currentColor" />
-						</svg>
-						<div>
-							<strong>Kontroller üst araç çubuğunda</strong>
-							<p>API key yönetimi ve tarama sıklığı artık doğrudan üstteki butonlardan yapılır.</p>
-						</div>
-					</div>
 				</div>
 			</div>
 		</div>
